@@ -1,58 +1,40 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🌿 Iwori Agenda
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> Gestão inteligente de sessões, presenças e faturamento para profissionais do desenvolvimento humano.
 
-## About Laravel
+O **Iwori Agenda** é uma aplicação web construída em modelo MVC moderno, pensada para simplificar a vida de profissionais que gerenciam acompanhamentos contínuos — desde atendimentos clínicos e análises junguianas até ciclos de instrução artística e grupos de estudos.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Inspirado no Odu *Iwori* da tradição Yoruba, que simboliza o insight, a clareza e a capacidade de enxergar a essência sob a superfície, este sistema organiza a complexidade do agendamento e da cobrança, permitindo que o profissional foque 100% na jornada do paciente ou aluno.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🎯 Principais Funcionalidades
 
-## Learning Laravel
+* 🗓️ **Calendário Dinâmico:** Visualização intuitiva das sessões do mês com marcações rápidas de status (Agendado, Realizado, Falta).
+* 👥 **Gestão de Clientes:** Perfis detalhados para pacientes ou alunos, controlando valores de contrato e histórico de comparecimento.
+* ✉️ **Notificações Automáticas:** Envio de e-mails transacionais (via fila) para confirmação de agendamentos.
+* 💰 **Faturamento Inteligente:** Cálculo automático no fechamento do ciclo mensal, somando apenas as sessões onde houve comparecimento.
+* 📲 **Integração Preparada:** Arquitetura orientada a serviços pronta para expansão e envio de lembretes via WhatsApp.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 🛠️ Tecnologias Utilizadas (A Stack)
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+A aplicação foi desenvolvida focando em performance, legibilidade e nas melhores práticas do mercado:
 
-## Agentic Development
+* **Back-end:** PHP 8+ e [Laravel 11](https://laravel.com/) (Arquitetura MVC pura, Filas, Console Commands e Mailables).
+* **Front-end:** [Livewire](https://livewire.laravel.com/) (Para reatividade sem a necessidade de APIs pesadas) e [Tailwind CSS](https://tailwindcss.com/) (Estilização via utilitários).
+* **Banco de Dados:** MySQL (Manipulado inteiramente pelas *Migrations* e *Eloquent ORM* do Laravel).
+* **Prototipagem de UI/UX:** Figma.
+* **Infraestrutura Local:** Docker via [Laravel Sail](https://laravel.com/docs/sail).
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+---
 
+## 🚀 Como Rodar o Projeto (Ambiente Local)
+
+Este projeto utiliza o Laravel Sail, o que significa que você não precisa instalar o PHP ou o MySQL diretamente na sua máquina. O Docker gerencia todos os contêineres necessários.
+
+**1. Clone o repositório:**
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
-```
-
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+git clone [https://github.com/SEU_USUARIO/iwori-agenda.git](https://github.com/SEU_USUARIO/iwori-agenda.git)
+cd iwori-agenda
