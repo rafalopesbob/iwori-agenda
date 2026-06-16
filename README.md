@@ -2,9 +2,7 @@
 
 > Gestão inteligente de sessões, presenças e faturamento para profissionais do desenvolvimento humano.
 
-O **Iwori Agenda** é uma aplicação web construída em modelo MVC moderno, pensada para simplificar a vida de profissionais que gerenciam acompanhamentos contínuos — desde atendimentos clínicos e análises junguianas até ciclos de instrução artística e grupos de estudos.
-
-Inspirado no Odu *Iwori* da tradição Yoruba, que simboliza o insight, a clareza e a capacidade de enxergar a essência sob a superfície, este sistema organiza a complexidade do agendamento e da cobrança, permitindo que o profissional foque 100% na jornada do paciente ou aluno.
+O **Iwori Agenda** é uma aplicação web construída em modelo MVC moderno, pensada para simplificar a vida de profissionais que gerenciam acompanhamentos contínuos — desde atendimentos clínicos até ciclos de instrução artística e grupos de estudos.
 
 ---
 
