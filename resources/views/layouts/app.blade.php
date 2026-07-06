@@ -13,6 +13,8 @@
             <a href="{{ route('home') }}" class="text-lg font-semibold text-emerald-700">🌿 Iwori Agenda</a>
             <div class="flex items-center gap-4 text-sm">
                 @auth
+                    <a href="{{ route('sessions.index') }}" class="text-emerald-700 hover:text-emerald-900 font-medium">Agenda</a>
+                    <a href="{{ route('clients.index') }}" class="text-emerald-700 hover:text-emerald-900 font-medium">Clientes</a>
                     <span class="text-gray-600">{{ auth()->user()->name }}</span>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf

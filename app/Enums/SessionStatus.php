@@ -29,4 +29,17 @@ enum SessionStatus: string
     {
         return $this === self::Completed;
     }
+
+    /**
+     * Classes Tailwind do badge de status no calendário.
+     */
+    public function badgeClasses(): string
+    {
+        return match ($this) {
+            self::Scheduled => 'bg-sky-100 text-sky-800',
+            self::Completed => 'bg-emerald-100 text-emerald-800',
+            self::NoShow => 'bg-red-100 text-red-800',
+            self::Canceled => 'bg-gray-100 text-gray-500 line-through',
+        };
+    }
 }
