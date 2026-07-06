@@ -15,6 +15,7 @@
                 @auth
                     <a href="{{ route('sessions.index') }}" class="text-emerald-700 hover:text-emerald-900 font-medium">Agenda</a>
                     <a href="{{ route('clients.index') }}" class="text-emerald-700 hover:text-emerald-900 font-medium">Clientes</a>
+                    <a href="{{ route('billing.index') }}" class="text-emerald-700 hover:text-emerald-900 font-medium">Faturamento</a>
                     <span class="text-gray-600">{{ auth()->user()->name }}</span>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf

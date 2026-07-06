@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\BillingController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ClientSessionController;
 use Illuminate\Support\Facades\Route;
@@ -33,4 +34,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/sessions/create', [ClientSessionController::class, 'create'])->name('sessions.create');
     Route::post('/sessions', [ClientSessionController::class, 'store'])->name('sessions.store');
     Route::patch('/sessions/{session}/status', [ClientSessionController::class, 'updateStatus'])->name('sessions.status');
+
+    Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
 });

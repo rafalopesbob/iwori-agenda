@@ -19,9 +19,7 @@ class CalendarService
      */
     public function monthGrid(?string $month = null): array
     {
-        $reference = ($month && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month))
-            ? CarbonImmutable::createFromFormat('!Y-m', $month)
-            : CarbonImmutable::now()->startOfMonth();
+        $reference = $this->resolveMonth($month);
 
         $start = $reference->startOfWeek(CarbonImmutable::SUNDAY);
         $end = $reference->endOfMonth()->endOfWeek(CarbonImmutable::SATURDAY);
@@ -37,5 +35,16 @@ class CalendarService
             'end' => $end->endOfDay(),
             'weeks' => array_chunk($days, 7),
         ];
+    }
+
+    /**
+     * Converte o parâmetro "Y-m" da URL no primeiro dia do mês,
+     * usando o mês atual quando ausente ou inválido.
+     */
+    public function resolveMonth(?string $month = null): CarbonImmutable
+    {
+        return ($month && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month))
+            ? CarbonImmutable::createFromFormat('!Y-m', $month)
+            : CarbonImmutable::now()->startOfMonth();
     }
 }
