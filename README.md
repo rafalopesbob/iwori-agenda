@@ -2,6 +2,8 @@
 
 > Gestão inteligente de sessões, presenças e faturamento para profissionais do desenvolvimento humano.
 
+O nome vem de **Ìwòrì**, um dos dezesseis odùs principais do oráculo de Ifá na tradição yorubá — associado ao olhar profundo, ao fogo interior e à transformação. É o espírito do projeto: enxergar cada pessoa de verdade e acompanhar seus processos de mudança.
+
 O **Iwori Agenda** é uma aplicação web construída em modelo MVC moderno, pensada para simplificar a vida de profissionais que gerenciam acompanhamentos contínuos — desde atendimentos clínicos até ciclos de instrução artística e grupos de estudos.
 
 ---

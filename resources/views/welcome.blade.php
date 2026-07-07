@@ -58,4 +58,19 @@
         </p>
     </div>
 </section>
+
+<section class="pb-16">
+    <div class="bg-mvindigo rounded-3xl p-8 sm:p-12 text-center">
+        <p class="text-mvlilac text-sm uppercase tracking-widest font-medium">Por que "Iwori"?</p>
+        <p class="text-white/90 mt-4 max-w-2xl mx-auto leading-relaxed">
+            <strong class="text-white">Ìwòrì</strong> é um dos dezesseis odùs principais do oráculo de Ifá,
+            na tradição yorubá — associado ao <strong class="text-mvrose">olhar profundo</strong>,
+            ao fogo interior e à <strong class="text-mvteal-light">transformação</strong>.
+        </p>
+        <p class="text-white/70 mt-3 max-w-2xl mx-auto leading-relaxed text-sm">
+            É esse o espírito deste espaço: enxergar cada pessoa de verdade
+            e acompanhar, com cuidado, os seus processos de mudança.
+        </p>
+    </div>
+</section>
 @endsection
