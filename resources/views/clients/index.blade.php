@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Clientes — Iwori Agenda')
+@section('title', 'Clientes — Agenda Iwori')
 
 @section('content')
 <div class="flex items-center justify-between mb-6">

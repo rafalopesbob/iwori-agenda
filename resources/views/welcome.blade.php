@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Iwori Agenda — Gestão de sessões, presenças e faturamento')
+@section('title', 'Agenda Iwori — Gestão de sessões, presenças e faturamento')
 
 @section('content')
 <section class="text-center py-12">

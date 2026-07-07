@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Entrar — Iwori Agenda')
+@section('title', 'Entrar — Agenda Iwori')
 
 @section('content')
 <div class="max-w-md mx-auto bg-white rounded-2xl shadow p-8">

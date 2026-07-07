@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Faturamento — Iwori Agenda')
+@section('title', 'Faturamento — Agenda Iwori')
 
 @section('content')
 <div class="flex flex-wrap items-center justify-between gap-4 mb-6">

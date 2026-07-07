@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $client->name . ' — Iwori Agenda')
+@section('title', $client->name . ' — Agenda Iwori')
 
 @section('content')
 <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow p-8">
