@@ -17,6 +17,32 @@
     </div>
 @endif
 
+@if (config('services.google.client_id'))
+    <div class="bg-white rounded-2xl shadow p-5 mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl">📅</span>
+            <div>
+                <p class="font-medium text-gray-900">Google Calendar</p>
+                @if (auth()->user()->hasGoogleCalendar())
+                    <p class="text-sm text-emerald-700">Conectado — novas sessões aparecem no seu calendário.</p>
+                @else
+                    <p class="text-sm text-gray-500">Conecte para espelhar suas sessões no calendário do Google.</p>
+                @endif
+            </div>
+        </div>
+
+        @if (auth()->user()->hasGoogleCalendar())
+            <form method="POST" action="{{ route('google.disconnect') }}">
+                @csrf
+                <button type="submit" class="text-sm text-red-600 hover:underline font-medium">Desconectar</button>
+            </form>
+        @else
+            <a href="{{ route('google.connect') }}"
+               class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium text-sm">Conectar</a>
+        @endif
+    </div>
+@endif
+
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
     <a href="{{ route('billing.index') }}" class="bg-white rounded-2xl shadow p-5 hover:shadow-md transition-shadow">
         <p class="text-sm text-gray-500">Faturamento do mês</p>

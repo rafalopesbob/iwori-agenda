@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Enums\SessionStatus;
 use App\Http\Requests\StoreSessionRequest;
+use App\Jobs\RemoveSessionFromGoogleCalendar;
+use App\Jobs\SyncSessionToGoogleCalendar;
 use App\Mail\SessionScheduledMail;
 use App\Models\ClientSession;
 use App\Services\CalendarService;
+use App\Services\GoogleCalendarService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -72,6 +75,11 @@ class ClientSessionController extends Controller
             Mail::to($client->email)->queue(new SessionScheduledMail($session));
         }
 
+        // Espelha no Google Calendar, quando o profissional conectou a conta.
+        if (app(GoogleCalendarService::class)->isConfigured() && $request->user()->hasGoogleCalendar()) {
+            SyncSessionToGoogleCalendar::dispatch($session);
+        }
+
         return redirect()
             ->route('sessions.index', ['month' => $session->scheduled_at->format('Y-m')])
             ->with('status', 'Sessão agendada com sucesso.');
@@ -89,6 +97,11 @@ class ClientSessionController extends Controller
         ]);
 
         $session->update(['status' => $validated['status']]);
+
+        // Sessão cancelada sai do Google Calendar do profissional.
+        if ($session->status === SessionStatus::Canceled && $session->google_event_id) {
+            RemoveSessionFromGoogleCalendar::dispatch($session);
+        }
 
         return back()->with('status', 'Sessão marcada como '.$session->status->label().'.');
     }

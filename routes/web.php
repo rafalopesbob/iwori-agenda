@@ -6,6 +6,7 @@ use App\Http\Controllers\BillingController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ClientSessionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GoogleCalendarController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -35,4 +36,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/sessions/{session}/status', [ClientSessionController::class, 'updateStatus'])->name('sessions.status');
 
     Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
+
+    Route::get('/google/connect', [GoogleCalendarController::class, 'redirect'])->name('google.connect');
+    Route::get('/google/callback', [GoogleCalendarController::class, 'callback'])->name('google.callback');
+    Route::post('/google/disconnect', [GoogleCalendarController::class, 'disconnect'])->name('google.disconnect');
 });
