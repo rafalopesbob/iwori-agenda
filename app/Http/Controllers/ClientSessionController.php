@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Enums\SessionStatus;
 use App\Http\Requests\StoreSessionRequest;
+use App\Mail\SessionScheduledMail;
 use App\Models\ClientSession;
 use App\Services\CalendarService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -64,6 +66,11 @@ class ClientSessionController extends Controller
             'notes' => $validated['notes'] ?? null,
             'status' => SessionStatus::Scheduled,
         ]);
+
+        // Confirmação por e-mail via fila, quando o cliente tem e-mail cadastrado.
+        if ($client->email) {
+            Mail::to($client->email)->queue(new SessionScheduledMail($session));
+        }
 
         return redirect()
             ->route('sessions.index', ['month' => $session->scheduled_at->format('Y-m')])
