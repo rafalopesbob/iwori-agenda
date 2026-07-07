@@ -87,7 +87,7 @@
 @else
     <nav class="bg-white border-b border-gray-200">
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-            <a href="{{ route('home') }}" class="text-lg font-bold text-white">🌿 Iwori <span class="text-mvrose">Agenda</span></a>
+            <a href="{{ route('home') }}" class="text-lg font-bold text-mvindigo">🌿 Iwori <span class="text-mvteal-dark">Agenda</span></a>
             <div class="flex items-center gap-4 text-sm">
                 <a href="{{ route('login') }}" class="text-gray-600 hover:text-gray-900 font-medium">Entrar</a>
                 <a href="{{ route('register') }}" class="bg-mvteal hover:bg-mvteal-dark text-white px-4 py-2 rounded-xl font-medium">Criar conta</a>
