@@ -4,13 +4,13 @@
 
 @section('content')
 <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow p-8">
-    <h1 class="text-2xl font-semibold text-emerald-800 mb-6">Novo cliente</h1>
+    <h1 class="text-2xl font-semibold text-gray-900 mb-6">Novo cliente</h1>
 
     <form method="POST" action="{{ route('clients.store') }}" class="space-y-4">
         @include('clients._form')
 
         <div class="flex items-center gap-3 pt-2">
-            <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-5 py-2.5 rounded-lg">
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-lg">
                 Cadastrar
             </button>
             <a href="{{ route('clients.index') }}" class="text-gray-600 hover:underline">Cancelar</a>

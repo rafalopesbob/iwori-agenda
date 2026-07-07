@@ -4,30 +4,30 @@
 
 @section('content')
 <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-    <h1 class="text-2xl font-semibold text-emerald-800 capitalize">
+    <h1 class="text-2xl font-semibold text-gray-900 capitalize">
         {{ $grid['month']->locale('pt_BR')->translatedFormat('F \d\e Y') }}
     </h1>
 
     <div class="flex items-center gap-2">
         <a href="{{ route('sessions.index', ['month' => $grid['month']->subMonth()->format('Y-m')]) }}"
-           class="px-3 py-2 rounded-lg bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50 font-medium">&larr;</a>
+           class="px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium">&larr;</a>
         <a href="{{ route('sessions.index') }}"
-           class="px-3 py-2 rounded-lg bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50 font-medium">Hoje</a>
+           class="px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium">Hoje</a>
         <a href="{{ route('sessions.index', ['month' => $grid['month']->addMonth()->format('Y-m')]) }}"
-           class="px-3 py-2 rounded-lg bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50 font-medium">&rarr;</a>
+           class="px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium">&rarr;</a>
         <a href="{{ route('sessions.create') }}"
-           class="ml-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium">Nova sessão</a>
+           class="ml-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium">Nova sessão</a>
     </div>
 </div>
 
 @if (session('status'))
-    <div class="bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-lg px-4 py-3 mb-6">
+    <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg px-4 py-3 mb-6">
         {{ session('status') }}
     </div>
 @endif
 
 <div class="bg-white rounded-2xl shadow overflow-hidden">
-    <div class="grid grid-cols-7 bg-emerald-50 text-emerald-900 text-xs font-medium text-center">
+    <div class="grid grid-cols-7 bg-gray-50 text-gray-700 text-xs font-medium text-center">
         @foreach (['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] as $weekday)
             <div class="py-2">{{ $weekday }}</div>
         @endforeach
@@ -43,11 +43,11 @@
                 <div class="min-h-28 p-1.5 {{ $isCurrentMonth ? '' : 'bg-gray-50' }}">
                     <div class="flex items-center justify-between mb-1">
                         <span class="text-xs font-medium px-1.5 py-0.5 rounded-full
-                            {{ $day->isToday() ? 'bg-emerald-600 text-white' : ($isCurrentMonth ? 'text-gray-700' : 'text-gray-400') }}">
+                            {{ $day->isToday() ? 'bg-indigo-600 text-white' : ($isCurrentMonth ? 'text-gray-700' : 'text-gray-400') }}">
                             {{ $day->day }}
                         </span>
                         <a href="{{ route('sessions.create', ['date' => $day->toDateString()]) }}"
-                           class="text-gray-300 hover:text-emerald-600 text-sm leading-none" title="Agendar neste dia">+</a>
+                           class="text-gray-300 hover:text-indigo-600 text-sm leading-none" title="Agendar neste dia">+</a>
                     </div>
 
                     <div class="space-y-1">
