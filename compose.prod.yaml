@@ -1,0 +1,52 @@
+# Stack de produção standalone (app + fila + MySQL).
+# Para desenvolvimento local, use o Herd ou o Sail (compose.yaml).
+#
+# Uso:
+#   cp .env.docker.example .env.docker   # e preencha APP_KEY e DB_PASSWORD
+#   docker compose -f compose.prod.yaml --env-file .env.docker up -d --build
+services:
+    app:
+        build: .
+        image: iwori-agenda
+        restart: unless-stopped
+        ports:
+            - '127.0.0.1:${APP_PORT:-8080}:80'
+        env_file: .env.docker
+        environment:
+            RUN_MIGRATIONS: '1'
+        depends_on:
+            mysql:
+                condition: service_healthy
+
+    queue:
+        build: .
+        image: iwori-agenda
+        restart: unless-stopped
+        command: php artisan queue:work --tries=3 --timeout=90
+        env_file: .env.docker
+        depends_on:
+            mysql:
+                condition: service_healthy
+            app:
+                condition: service_started
+
+    mysql:
+        image: 'mysql:8.4'
+        restart: unless-stopped
+        # Sem porta publicada: o banco só é alcançável pelos containers da stack.
+        environment:
+            MYSQL_ROOT_PASSWORD: '${DB_PASSWORD:?defina DB_PASSWORD no .env.docker}'
+            MYSQL_DATABASE: '${DB_DATABASE:-iwori_agenda}'
+            MYSQL_USER: '${DB_USERNAME:-iwori}'
+            MYSQL_PASSWORD: '${DB_PASSWORD}'
+        volumes:
+            - 'iwori-mysql:/var/lib/mysql'
+        healthcheck:
+            test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-p${DB_PASSWORD}']
+            interval: 5s
+            retries: 12
+            timeout: 5s
+
+volumes:
+    iwori-mysql:
+        driver: local
