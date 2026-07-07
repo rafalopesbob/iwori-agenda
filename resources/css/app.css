@@ -6,4 +6,19 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* Paleta inspirada em Monument Valley */
+    --color-mvteal: #14a3a1; /* turquesa dos cenários */
+    --color-mvteal-dark: #0d827f;
+    --color-mvteal-light: #d5f0ee;
+    --color-mvrose: #e08fa9; /* rosa empoeirado das torres */
+    --color-mvrose-dark: #c96b8c;
+    --color-mvrose-light: #fae4eb;
+    --color-mvsand: #f6efe2; /* areia/creme dos templos */
+    --color-mvsand-dark: #e9dcc2;
+    --color-mvindigo: #3c3a68; /* índigo do céu noturno */
+    --color-mvindigo-dark: #312f57;
+    --color-mvindigo-light: #55527f;
+    --color-mvlilac: #b7b2e2; /* lilás das cúpulas */
+    --color-mvlilac-light: #ecebf9;
 }

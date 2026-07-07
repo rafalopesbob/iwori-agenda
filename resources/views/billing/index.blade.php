@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-    <h1 class="text-2xl font-semibold text-gray-900">
+    <h1 class="text-2xl font-semibold text-mvindigo">
         Faturamento — <span class="capitalize">{{ $month->locale('pt_BR')->translatedFormat('F \d\e Y') }}</span>
     </h1>
 
@@ -21,7 +21,7 @@
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
     <div class="bg-white rounded-2xl shadow p-5">
         <p class="text-sm text-gray-500">Faturamento do mês</p>
-        <p class="text-2xl font-semibold text-indigo-600 mt-1">R$ {{ number_format($totals['total'], 2, ',', '.') }}</p>
+        <p class="text-2xl font-semibold text-mvteal-dark mt-1">R$ {{ number_format($totals['total'], 2, ',', '.') }}</p>
     </div>
     <div class="bg-white rounded-2xl shadow p-5">
         <p class="text-sm text-gray-500">Sessões realizadas</p>
@@ -53,19 +53,19 @@
                     @foreach ($rows as $row)
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3">
-                                <a href="{{ route('clients.show', $row['client']) }}" class="font-medium text-indigo-600 hover:underline">
+                                <a href="{{ route('clients.show', $row['client']) }}" class="font-medium text-mvteal-dark hover:underline">
                                     {{ $row['client']->name }}
                                 </a>
                             </td>
                             <td class="px-4 py-3 text-center">{{ $row['completed'] }}</td>
-                            <td class="px-4 py-3 text-center {{ $row['no_show'] > 0 ? 'text-red-600 font-medium' : '' }}">{{ $row['no_show'] }}</td>
+                            <td class="px-4 py-3 text-center {{ $row['no_show'] > 0 ? 'text-mvrose-dark font-medium' : '' }}">{{ $row['no_show'] }}</td>
                             <td class="px-4 py-3 text-center text-gray-500">{{ $row['canceled'] }}</td>
                             <td class="px-4 py-3 text-center text-gray-500">{{ $row['scheduled'] }}</td>
                             <td class="px-4 py-3 text-right font-medium">R$ {{ number_format($row['total'], 2, ',', '.') }}</td>
                         </tr>
                     @endforeach
                 </tbody>
-                <tfoot class="bg-gray-50 font-semibold text-gray-900">
+                <tfoot class="bg-gray-50 font-semibold text-mvindigo">
                     <tr>
                         <td class="px-4 py-3">Total</td>
                         <td class="px-4 py-3 text-center">{{ $totals['completed'] }}</td>

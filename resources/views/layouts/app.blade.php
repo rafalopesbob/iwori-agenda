@@ -7,7 +7,7 @@
     <title>@yield('title', 'Agenda Iwori')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-gray-100 text-gray-800 antialiased">
+<body class="min-h-screen bg-mvsand text-gray-800 antialiased">
 @auth
     @php
         $navItems = [
@@ -19,28 +19,28 @@
     @endphp
 
     {{-- Barra superior (apenas mobile) --}}
-    <header class="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-        <a href="{{ route('dashboard') }}" class="font-bold text-gray-900">🌿 Iwori <span class="text-indigo-600">Agenda</span></a>
-        <nav class="flex items-center gap-3 text-sm font-medium text-gray-600">
+    <header class="lg:hidden bg-mvindigo px-4 py-3 flex items-center justify-between">
+        <a href="{{ route('dashboard') }}" class="font-bold text-white">🌿 Iwori <span class="text-mvrose">Agenda</span></a>
+        <nav class="flex items-center gap-3 text-sm font-medium">
             @foreach ($navItems as $item)
                 <a href="{{ route($item['route']) }}"
-                   class="{{ request()->routeIs($item['active']) ? 'text-indigo-600' : 'hover:text-gray-900' }}">{{ $item['label'] }}</a>
+                   class="{{ request()->routeIs($item['active']) ? 'text-white font-semibold' : 'text-white/70 hover:text-white' }}">{{ $item['label'] }}</a>
             @endforeach
         </nav>
     </header>
 
     <div class="flex">
         {{-- Sidebar (desktop) --}}
-        <aside class="hidden lg:flex flex-col fixed inset-y-0 w-64 bg-white border-r border-gray-200">
+        <aside class="hidden lg:flex flex-col fixed inset-y-0 w-64 bg-mvindigo">
             <div class="px-6 py-5">
-                <a href="{{ route('dashboard') }}" class="text-lg font-bold text-gray-900">🌿 Iwori <span class="text-indigo-600">Agenda</span></a>
+                <a href="{{ route('dashboard') }}" class="text-lg font-bold text-white">🌿 Iwori <span class="text-mvrose">Agenda</span></a>
             </div>
 
             <nav class="flex-1 px-3 py-2 space-y-1">
                 @foreach ($navItems as $item)
                     <a href="{{ route($item['route']) }}"
                        class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors
-                              {{ request()->routeIs($item['active']) ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                              {{ request()->routeIs($item['active']) ? 'bg-mvteal text-white shadow-sm' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" class="w-5 h-5 shrink-0">
                             <path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}"/>
                         </svg>
@@ -49,7 +49,7 @@
                 @endforeach
 
                 <a href="{{ route('sessions.create') }}"
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" class="w-5 h-5 shrink-0">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
                     </svg>
@@ -57,19 +57,19 @@
                 </a>
             </nav>
 
-            <div class="px-4 py-4 border-t border-gray-100 flex items-center justify-between gap-2">
+            <div class="px-4 py-4 border-t border-white/10 flex items-center justify-between gap-2">
                 <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-semibold shrink-0">
+                    <div class="w-9 h-9 rounded-full bg-mvrose text-white flex items-center justify-center font-semibold shrink-0">
                         {{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}
                     </div>
                     <div class="min-w-0">
-                        <p class="text-sm font-medium text-gray-900 truncate">{{ auth()->user()->name }}</p>
-                        <p class="text-xs text-gray-500 truncate">{{ auth()->user()->email }}</p>
+                        <p class="text-sm font-medium text-white truncate">{{ auth()->user()->name }}</p>
+                        <p class="text-xs text-white/60 truncate">{{ auth()->user()->email }}</p>
                     </div>
                 </div>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" title="Sair" class="text-gray-400 hover:text-red-500 p-1">
+                    <button type="submit" title="Sair" class="text-white/50 hover:text-mvrose p-1">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" class="w-5 h-5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"/>
                         </svg>
@@ -87,10 +87,10 @@
 @else
     <nav class="bg-white border-b border-gray-200">
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-            <a href="{{ route('home') }}" class="text-lg font-bold text-gray-900">🌿 Iwori <span class="text-indigo-600">Agenda</span></a>
+            <a href="{{ route('home') }}" class="text-lg font-bold text-white">🌿 Iwori <span class="text-mvrose">Agenda</span></a>
             <div class="flex items-center gap-4 text-sm">
                 <a href="{{ route('login') }}" class="text-gray-600 hover:text-gray-900 font-medium">Entrar</a>
-                <a href="{{ route('register') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-medium">Criar conta</a>
+                <a href="{{ route('register') }}" class="bg-mvteal hover:bg-mvteal-dark text-white px-4 py-2 rounded-xl font-medium">Criar conta</a>
             </div>
         </div>
     </nav>

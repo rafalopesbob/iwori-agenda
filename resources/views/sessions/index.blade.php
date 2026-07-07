@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-    <h1 class="text-2xl font-semibold text-gray-900 capitalize">
+    <h1 class="text-2xl font-semibold text-mvindigo capitalize">
         {{ $grid['month']->locale('pt_BR')->translatedFormat('F \d\e Y') }}
     </h1>
 
@@ -16,12 +16,12 @@
         <a href="{{ route('sessions.index', ['month' => $grid['month']->addMonth()->format('Y-m')]) }}"
            class="px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium">&rarr;</a>
         <a href="{{ route('sessions.create') }}"
-           class="ml-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium">Nova sessão</a>
+           class="ml-2 bg-mvteal hover:bg-mvteal-dark text-white px-4 py-2 rounded-lg font-medium">Nova sessão</a>
     </div>
 </div>
 
 @if (session('status'))
-    <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg px-4 py-3 mb-6">
+    <div class="bg-mvteal-light border border-mvteal/30 text-mvteal-dark rounded-lg px-4 py-3 mb-6">
         {{ session('status') }}
     </div>
 @endif
@@ -43,11 +43,11 @@
                 <div class="min-h-28 p-1.5 {{ $isCurrentMonth ? '' : 'bg-gray-50' }}">
                     <div class="flex items-center justify-between mb-1">
                         <span class="text-xs font-medium px-1.5 py-0.5 rounded-full
-                            {{ $day->isToday() ? 'bg-indigo-600 text-white' : ($isCurrentMonth ? 'text-gray-700' : 'text-gray-400') }}">
+                            {{ $day->isToday() ? 'bg-mvrose-dark text-white' : ($isCurrentMonth ? 'text-gray-700' : 'text-gray-400') }}">
                             {{ $day->day }}
                         </span>
                         <a href="{{ route('sessions.create', ['date' => $day->toDateString()]) }}"
-                           class="text-gray-300 hover:text-indigo-600 text-sm leading-none" title="Agendar neste dia">+</a>
+                           class="text-gray-300 hover:text-mvteal text-sm leading-none" title="Agendar neste dia">+</a>
                     </div>
 
                     <div class="space-y-1">
@@ -64,14 +64,14 @@
                                             @method('PATCH')
                                             <input type="hidden" name="status" value="completed">
                                             <button type="submit" title="Marcar como Realizado"
-                                                    class="w-5 h-5 rounded bg-emerald-600 text-white hover:bg-emerald-700 leading-none">✓</button>
+                                                    class="w-5 h-5 rounded bg-mvteal text-white hover:bg-mvteal-dark leading-none">✓</button>
                                         </form>
                                         <form method="POST" action="{{ route('sessions.status', $session) }}">
                                             @csrf
                                             @method('PATCH')
                                             <input type="hidden" name="status" value="no_show">
                                             <button type="submit" title="Marcar como Falta"
-                                                    class="w-5 h-5 rounded bg-red-500 text-white hover:bg-red-600 leading-none">✗</button>
+                                                    class="w-5 h-5 rounded bg-mvrose-dark text-white hover:bg-mvrose leading-none">✗</button>
                                         </form>
                                         <form method="POST" action="{{ route('sessions.status', $session) }}">
                                             @csrf
@@ -92,9 +92,9 @@
 </div>
 
 <div class="flex flex-wrap gap-4 mt-4 text-xs text-gray-600">
-    <span><span class="inline-block w-3 h-3 rounded bg-sky-200 align-middle mr-1"></span>Agendado</span>
-    <span><span class="inline-block w-3 h-3 rounded bg-emerald-200 align-middle mr-1"></span>Realizado</span>
-    <span><span class="inline-block w-3 h-3 rounded bg-red-200 align-middle mr-1"></span>Falta</span>
+    <span><span class="inline-block w-3 h-3 rounded bg-mvlilac align-middle mr-1"></span>Agendado</span>
+    <span><span class="inline-block w-3 h-3 rounded bg-mvteal/50 align-middle mr-1"></span>Realizado</span>
+    <span><span class="inline-block w-3 h-3 rounded bg-mvrose align-middle mr-1"></span>Falta</span>
     <span><span class="inline-block w-3 h-3 rounded bg-gray-200 align-middle mr-1"></span>Cancelado</span>
 </div>
 @endsection
