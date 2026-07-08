@@ -43,10 +43,12 @@
                     <tr>
                         <th class="px-4 py-3 font-medium">Cliente</th>
                         <th class="px-4 py-3 font-medium text-center">Realizadas</th>
-                        <th class="px-4 py-3 font-medium text-center">Faltas</th>
+                        <th class="px-4 py-3 font-medium text-center" title="Falta não informada — cobrada">Faltas s/ aviso</th>
+                        <th class="px-4 py-3 font-medium text-center" title="Falta informada — abonada">Faltas c/ aviso</th>
                         <th class="px-4 py-3 font-medium text-center">Canceladas</th>
                         <th class="px-4 py-3 font-medium text-center">Agendadas</th>
                         <th class="px-4 py-3 font-medium text-right">Faturamento</th>
+                        <th class="px-4 py-3 font-medium text-right">Cobrança</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -59,9 +61,20 @@
                             </td>
                             <td class="px-4 py-3 text-center">{{ $row['completed'] }}</td>
                             <td class="px-4 py-3 text-center {{ $row['no_show'] > 0 ? 'text-mvrose-dark font-medium' : '' }}">{{ $row['no_show'] }}</td>
+                            <td class="px-4 py-3 text-center {{ $row['no_show_excused'] > 0 ? 'text-amber-600 font-medium' : 'text-gray-500' }}">{{ $row['no_show_excused'] }}</td>
                             <td class="px-4 py-3 text-center text-gray-500">{{ $row['canceled'] }}</td>
                             <td class="px-4 py-3 text-center text-gray-500">{{ $row['scheduled'] }}</td>
                             <td class="px-4 py-3 text-right font-medium">R$ {{ number_format($row['total'], 2, ',', '.') }}</td>
+                            <td class="px-4 py-3 text-right">
+                                <form method="POST" action="{{ route('billing.charge', $row['client']) }}" class="inline">
+                                    @csrf
+                                    <button type="submit"
+                                            title="Enviar cobrança do período por {{ $row['client']->billing_channel->label() }}"
+                                            class="text-xs bg-mvteal hover:bg-mvteal-dark text-white px-3 py-1.5 rounded-lg font-medium">
+                                        Cobrar
+                                    </button>
+                                </form>
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -70,15 +83,18 @@
                         <td class="px-4 py-3">Total</td>
                         <td class="px-4 py-3 text-center">{{ $totals['completed'] }}</td>
                         <td class="px-4 py-3 text-center">{{ $totals['no_show'] }}</td>
+                        <td class="px-4 py-3 text-center">{{ $totals['no_show_excused'] }}</td>
                         <td class="px-4 py-3" colspan="2"></td>
                         <td class="px-4 py-3 text-right">R$ {{ number_format($totals['total'], 2, ',', '.') }}</td>
+                        <td class="px-4 py-3"></td>
                     </tr>
                 </tfoot>
             </table>
         </div>
 
         <p class="px-4 py-3 text-xs text-gray-500 border-t border-gray-100">
-            O faturamento considera apenas sessões marcadas como <strong>Realizado</strong>. Sessões ainda agendadas não entram no total.
+            O faturamento soma sessões <strong>Realizadas</strong> e <strong>Faltas não informadas</strong> (sem aviso).
+            Faltas informadas são abonadas; agendadas e canceladas não entram no total.
         </p>
     @endif
 </div>

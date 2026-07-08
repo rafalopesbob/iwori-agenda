@@ -20,17 +20,18 @@ class ClientSessionTest extends TestCase
         $this->assertSame(SessionStatus::Completed, $session->fresh()->status);
     }
 
-    public function test_faturamento_soma_apenas_sessoes_realizadas(): void
+    public function test_faturamento_soma_realizadas_e_faltas_nao_informadas(): void
     {
         $client = Client::factory()->create();
 
         ClientSession::factory()->for($client)->completed()->create(['value' => 100]);
         ClientSession::factory()->for($client)->completed()->create(['value' => 150]);
-        ClientSession::factory()->for($client)->noShow()->create(['value' => 100]);
+        ClientSession::factory()->for($client)->noShow()->create(['value' => 100]); // não avisou: cobrada
+        ClientSession::factory()->for($client)->noShowExcused()->create(['value' => 100]); // avisou: abonada
         ClientSession::factory()->for($client)->canceled()->create(['value' => 100]);
         ClientSession::factory()->for($client)->create(['value' => 100]); // agendada
 
-        $this->assertEquals(250, $client->sessions()->billable()->sum('value'));
+        $this->assertEquals(350, $client->sessions()->billable()->sum('value'));
     }
 
     public function test_scope_scheduled_between_delimita_o_ciclo(): void
@@ -61,6 +62,10 @@ class ClientSessionTest extends TestCase
             'scheduled_at' => '2026-07-12 09:00:00',
             'value' => 200,
         ]);
+        ClientSession::factory()->for($client)->noShowExcused()->create([
+            'scheduled_at' => '2026-07-15 09:00:00',
+            'value' => 200,
+        ]);
         ClientSession::factory()->for($client)->completed()->create([
             'scheduled_at' => '2026-06-10 09:00:00',
             'value' => 200,
@@ -71,7 +76,8 @@ class ClientSessionTest extends TestCase
             ->scheduledBetween('2026-07-01 00:00:00', '2026-07-31 23:59:59')
             ->sum('value');
 
-        $this->assertEquals(200, $faturamentoJulho);
+        // Realizada (200) + falta não informada (200); a informada é abonada.
+        $this->assertEquals(400, $faturamentoJulho);
     }
 
     public function test_client_id_nao_e_atribuivel_em_massa(): void

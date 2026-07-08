@@ -30,6 +30,18 @@ services:
             app:
                 condition: service_started
 
+    scheduler:
+        build: .
+        image: iwori-agenda
+        restart: unless-stopped
+        command: php artisan schedule:work
+        env_file: .env.docker
+        depends_on:
+            mysql:
+                condition: service_healthy
+            app:
+                condition: service_started
+
     mysql:
         image: 'mysql:8.4'
         restart: unless-stopped

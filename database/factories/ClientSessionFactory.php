@@ -41,12 +41,23 @@ class ClientSessionFactory extends Factory
     }
 
     /**
-     * Cliente faltou.
+     * Cliente faltou sem avisar (cobrada).
      */
     public function noShow(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => SessionStatus::NoShow,
+            'status' => SessionStatus::NoShowUnexcused,
+            'scheduled_at' => fake()->dateTimeBetween('-1 month', 'now'),
+        ]);
+    }
+
+    /**
+     * Cliente avisou a falta (abonada).
+     */
+    public function noShowExcused(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => SessionStatus::NoShowExcused,
             'scheduled_at' => fake()->dateTimeBetween('-1 month', 'now'),
         ]);
     }

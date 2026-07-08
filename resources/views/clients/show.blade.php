@@ -27,6 +27,25 @@
                 <dt class="text-gray-500">Situação</dt>
                 <dd class="font-medium">{{ $client->active ? 'Ativo' : 'Inativo' }}</dd>
             </div>
+            <div>
+                <dt class="text-gray-500">Ciclo de pagamento</dt>
+                <dd class="font-medium">
+                    {{ $client->payment_cycle->label() }}
+                    @if ($client->payment_cycle === App\Enums\PaymentCycle::Monthly && $client->payment_day)
+                        — todo dia {{ $client->payment_day }}
+                    @elseif ($client->payment_cycle === App\Enums\PaymentCycle::Interval && $client->payment_interval_days)
+                        — a cada {{ $client->payment_interval_days }} dias
+                    @endif
+                </dd>
+            </div>
+            <div>
+                <dt class="text-gray-500">Canal de cobrança</dt>
+                <dd class="font-medium">{{ $client->billing_channel->label() }}</dd>
+            </div>
+            <div>
+                <dt class="text-gray-500">Última cobrança</dt>
+                <dd class="font-medium">{{ $client->last_charged_at?->format('d/m/Y') ?? 'Nunca cobrado' }}</dd>
+            </div>
         </div>
 
         @if ($client->notes)

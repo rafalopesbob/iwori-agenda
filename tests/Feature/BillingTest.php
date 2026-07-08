@@ -25,7 +25,7 @@ class BillingTest extends TestCase
         $this->get('/billing')->assertRedirect(route('login'));
     }
 
-    public function test_fechamento_soma_apenas_sessoes_realizadas_do_mes(): void
+    public function test_fechamento_soma_faturaveis_do_mes(): void
     {
         $user = User::factory()->create();
         $client = Client::factory()->for($user)->create();
@@ -37,7 +37,10 @@ class BillingTest extends TestCase
             'scheduled_at' => '2026-07-17 09:00:00', 'value' => 100,
         ]);
         ClientSession::factory()->for($client)->noShow()->create([
-            'scheduled_at' => '2026-07-20 09:00:00', 'value' => 200,
+            'scheduled_at' => '2026-07-20 09:00:00', 'value' => 200, // não avisou: cobrada
+        ]);
+        ClientSession::factory()->for($client)->noShowExcused()->create([
+            'scheduled_at' => '2026-07-22 09:00:00', 'value' => 500, // avisou: abonada
         ]);
         ClientSession::factory()->for($client)->create([
             'scheduled_at' => '2026-07-25 09:00:00', 'value' => 200, // ainda agendada
@@ -51,9 +54,12 @@ class BillingTest extends TestCase
         $this->assertCount(1, $report['rows']);
         $this->assertSame(2, $report['rows'][0]['completed']);
         $this->assertSame(1, $report['rows'][0]['no_show']);
+        $this->assertSame(1, $report['rows'][0]['no_show_excused']);
         $this->assertSame(1, $report['rows'][0]['scheduled']);
-        $this->assertEquals(250.0, $report['rows'][0]['total']);
-        $this->assertEquals(250.0, $report['totals']['total']);
+        // 150 + 100 realizadas + 200 falta não informada; a informada (500) fica fora.
+        $this->assertEquals(450.0, $report['rows'][0]['total']);
+        $this->assertEquals(450.0, $report['totals']['total']);
+        $this->assertSame(1, $report['totals']['no_show_excused']);
     }
 
     public function test_tela_exibe_totais_do_mes(): void

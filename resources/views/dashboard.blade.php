@@ -79,7 +79,7 @@
                     </div>
 
                     @if ($session->status === App\Enums\SessionStatus::Scheduled)
-                        <div class="flex gap-2">
+                        <div class="flex flex-wrap gap-2">
                             <form method="POST" action="{{ route('sessions.status', $session) }}">
                                 @csrf
                                 @method('PATCH')
@@ -90,7 +90,13 @@
                                 @csrf
                                 @method('PATCH')
                                 <input type="hidden" name="status" value="no_show">
-                                <button type="submit" class="text-xs bg-mvrose-dark hover:bg-mvrose text-white px-3 py-1.5 rounded-lg font-medium">✗ Falta</button>
+                                <button type="submit" title="Falta cobrada" class="text-xs bg-mvrose-dark hover:bg-mvrose text-white px-3 py-1.5 rounded-lg font-medium">✗ Falta (não avisou)</button>
+                            </form>
+                            <form method="POST" action="{{ route('sessions.status', $session) }}">
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="status" value="no_show_excused">
+                                <button type="submit" title="Falta abonada" class="text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg font-medium">Falta (avisou)</button>
                             </form>
                         </div>
                     @endif

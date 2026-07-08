@@ -40,4 +40,10 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
     ],
 
+    'whatsapp' => [
+        'token' => env('WHATSAPP_TOKEN'),
+        'phone_number_id' => env('WHATSAPP_PHONE_ID'),
+        'template_charge' => env('WHATSAPP_TEMPLATE_CHARGE', 'cobranca_iwori'),
+    ],
+
 ];

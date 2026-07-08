@@ -48,6 +48,9 @@ class ClientCrudTest extends TestCase
             'session_value' => '180.50',
             'notes' => 'primeira anotação',
             'active' => '1',
+            'payment_cycle' => 'monthly',
+            'payment_day' => '5',
+            'billing_channel' => 'email',
         ]);
 
         $response->assertRedirect(route('clients.index'));
@@ -78,6 +81,9 @@ class ClientCrudTest extends TestCase
             'name' => 'Nome Atualizado',
             'session_value' => '200.00',
             'active' => '1',
+            'payment_cycle' => 'monthly',
+            'payment_day' => '5',
+            'billing_channel' => 'email',
         ]);
 
         $response->assertRedirect(route('clients.index'));

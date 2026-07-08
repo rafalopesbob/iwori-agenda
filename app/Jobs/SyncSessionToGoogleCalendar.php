@@ -21,9 +21,14 @@ class SyncSessionToGoogleCalendar implements ShouldQueue
 
     /**
      * Execute the job.
+     *
+     * Upsert: cria o evento na primeira sincronização e atualiza o
+     * existente nos reagendamentos — nunca duplica.
      */
     public function handle(GoogleCalendarService $calendar): void
     {
-        $calendar->createEvent($this->session);
+        $this->session->google_event_id
+            ? $calendar->updateEvent($this->session)
+            : $calendar->createEvent($this->session);
     }
 }

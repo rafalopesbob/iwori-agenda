@@ -97,6 +97,31 @@ class GoogleCalendarService
     }
 
     /**
+     * Atualiza o evento existente da sessão (reagendamento).
+     * Se o evento sumiu no Google, recria.
+     */
+    public function updateEvent(ClientSession $session): void
+    {
+        $user = $session->client->user;
+
+        if (! $session->google_event_id || ! $this->isConfigured() || ! $user->hasGoogleCalendar()) {
+            return;
+        }
+
+        $response = Http::withToken($this->accessToken($user))
+            ->patch(self::EVENTS_URL.'/'.$session->google_event_id, $this->eventPayload($session));
+
+        if (in_array($response->status(), [404, 410])) {
+            $session->forceFill(['google_event_id' => null])->save();
+            $this->createEvent($session);
+
+            return;
+        }
+
+        $response->throw();
+    }
+
+    /**
      * Remove o evento da sessão do calendário (ex.: cancelamento).
      */
     public function deleteEvent(ClientSession $session): void

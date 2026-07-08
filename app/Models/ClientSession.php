@@ -42,11 +42,12 @@ class ClientSession extends Model
     }
 
     /**
-     * Apenas sessões realizadas (as que entram no faturamento).
+     * Apenas sessões que entram no faturamento
+     * (realizadas e faltas não informadas).
      */
     public function scopeBillable(Builder $query): Builder
     {
-        return $query->where('status', SessionStatus::Completed);
+        return $query->whereIn('status', SessionStatus::billableCases());
     }
 
     /**
