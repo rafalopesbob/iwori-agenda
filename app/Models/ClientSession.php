@@ -57,4 +57,20 @@ class ClientSession extends Model
     {
         return $query->whereBetween('scheduled_at', [$start, $end]);
     }
+
+    /**
+     * Demais sessões da mesma série recorrente.
+     */
+    public function scopeSameRecurrenceGroup(Builder $query, self $session): Builder
+    {
+        return $query->where('recurrence_group_id', $session->recurrence_group_id);
+    }
+
+    /**
+     * Esta sessão faz parte de uma série recorrente?
+     */
+    public function isRecurring(): bool
+    {
+        return $this->recurrence_group_id !== null;
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\RecurrenceFrequency;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -37,6 +38,22 @@ class StoreSessionRequest extends FormRequest
             'duration_minutes' => ['required', 'integer', 'min:5', 'max:600'],
             'value' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'notes' => ['nullable', 'string', 'max:5000'],
+            'recurrence' => ['nullable', Rule::enum(RecurrenceFrequency::class)],
+            // Limite de 52 evita gerar uma quantidade excessiva de sessões de uma vez.
+            'recurrence_count' => ['nullable', 'required_with:recurrence', 'integer', 'min:2', 'max:52'],
+        ];
+    }
+
+    /**
+     * Get custom attributes for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'recurrence' => 'frequência de repetição',
+            'recurrence_count' => 'quantidade de repetições',
         ];
     }
 }

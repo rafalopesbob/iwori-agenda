@@ -63,5 +63,20 @@
             <a href="{{ route('sessions.index', ['month' => $session->scheduled_at->format('Y-m')]) }}" class="text-gray-600 hover:underline">Cancelar</a>
         </div>
     </form>
+
+    @if ($session->isRecurring())
+        <div class="mt-6 pt-6 border-t border-gray-100">
+            <p class="text-sm text-gray-600 mb-2">
+                🔁 Esta sessão faz parte de uma série recorrente.
+            </p>
+            <form method="POST" action="{{ route('sessions.recurrence.cancel', $session) }}"
+                  onsubmit="return confirm('Cancelar esta e todas as sessões futuras agendadas desta série? Sessões já realizadas ou com falta não serão alteradas.');">
+                @csrf
+                <button type="submit" class="text-sm text-mvrose-dark hover:underline font-medium">
+                    Cancelar esta e as próximas sessões da série
+                </button>
+            </form>
+        </div>
+    @endif
 </div>
 @endsection

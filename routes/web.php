@@ -39,6 +39,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/sessions/{session}/status', [ClientSessionController::class, 'updateStatus'])->name('sessions.status');
     Route::patch('/sessions/{session}/move', [ClientSessionController::class, 'move'])->name('sessions.move');
     Route::post('/sessions/{session}/charge', [ChargeController::class, 'session'])->name('sessions.charge');
+    Route::post('/sessions/{session}/cancel-recurrence', [ClientSessionController::class, 'cancelRecurrence'])->name('sessions.recurrence.cancel');
 
     Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
     Route::post('/billing/{client}/charge', [ChargeController::class, 'client'])->name('billing.charge');

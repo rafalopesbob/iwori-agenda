@@ -74,6 +74,55 @@
                 @enderror
             </div>
 
+            <fieldset class="border border-gray-200 rounded-xl p-4 space-y-4">
+                <legend class="text-sm font-semibold text-mvindigo px-2">Repetir sessão</legend>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="recurrence" class="block text-sm font-medium mb-1">Frequência</label>
+                        <select id="recurrence" name="recurrence"
+                                class="w-full rounded-lg border-gray-300 border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-mvteal">
+                            <option value="">Não repetir</option>
+                            @foreach (App\Enums\RecurrenceFrequency::cases() as $frequency)
+                                <option value="{{ $frequency->value }}" @selected(old('recurrence') === $frequency->value)>
+                                    {{ $frequency->label() }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('recurrence')
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div id="recurrence_count_field" class="hidden">
+                        <label for="recurrence_count" class="block text-sm font-medium mb-1">Quantas vezes?</label>
+                        <input id="recurrence_count" type="number" name="recurrence_count" min="2" max="52"
+                               value="{{ old('recurrence_count', 4) }}"
+                               class="w-full rounded-lg border-gray-300 border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-mvteal">
+                        @error('recurrence_count')
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                <p class="text-xs text-gray-500">
+                    Cria as sessões futuras de uma vez, no mesmo horário. Você pode cancelar as
+                    ocorrências restantes depois, a qualquer momento.
+                </p>
+            </fieldset>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const recurrence = document.getElementById('recurrence');
+                    const countField = document.getElementById('recurrence_count_field');
+
+                    const sync = () => countField.classList.toggle('hidden', recurrence.value === '');
+
+                    recurrence.addEventListener('change', sync);
+                    sync();
+                });
+            </script>
+
             <div class="flex items-center gap-3 pt-2">
                 <button type="submit" class="bg-mvteal hover:bg-mvteal-dark text-white font-medium px-5 py-2.5 rounded-lg">
                     Agendar

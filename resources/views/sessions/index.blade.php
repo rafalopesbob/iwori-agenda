@@ -57,8 +57,11 @@
                                      draggable="true" data-session-chip="{{ route('sessions.move', $session) }}"
                                  @endif>
                                 <div class="font-medium truncate {{ $session->status === App\Enums\SessionStatus::Scheduled ? 'cursor-grab' : '' }}"
-                                     title="{{ $session->client->name }} — {{ $session->status->label() }}">
+                                     title="{{ $session->client->name }} — {{ $session->status->label() }}{{ $session->isRecurring() ? ' (série recorrente)' : '' }}">
                                     {{ $session->scheduled_at->format('H:i') }} {{ $session->client->name }}
+                                    @if ($session->isRecurring())
+                                        <span title="Faz parte de uma série recorrente">🔁</span>
+                                    @endif
                                 </div>
 
                                 <div class="flex gap-1 mt-1">
