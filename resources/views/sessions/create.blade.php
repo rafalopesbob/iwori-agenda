@@ -105,6 +105,16 @@
                     </div>
                 </div>
 
+                <div id="recurrence_custom_days_field" class="hidden">
+                    <label for="recurrence_custom_days" class="block text-sm font-medium mb-1">A cada quantos dias?</label>
+                    <input id="recurrence_custom_days" type="number" name="recurrence_custom_days" min="1" max="365"
+                           value="{{ old('recurrence_custom_days') }}" placeholder="Ex.: 10"
+                           class="w-full rounded-lg border-gray-300 border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-mvteal">
+                    @error('recurrence_custom_days')
+                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <p class="text-xs text-gray-500">
                     Cria as sessões futuras de uma vez, no mesmo horário. Você pode cancelar as
                     ocorrências restantes depois, a qualquer momento.
@@ -115,8 +125,12 @@
                 document.addEventListener('DOMContentLoaded', () => {
                     const recurrence = document.getElementById('recurrence');
                     const countField = document.getElementById('recurrence_count_field');
+                    const customDaysField = document.getElementById('recurrence_custom_days_field');
 
-                    const sync = () => countField.classList.toggle('hidden', recurrence.value === '');
+                    const sync = () => {
+                        countField.classList.toggle('hidden', recurrence.value === '');
+                        customDaysField.classList.toggle('hidden', recurrence.value !== 'custom');
+                    };
 
                     recurrence.addEventListener('change', sync);
                     sync();

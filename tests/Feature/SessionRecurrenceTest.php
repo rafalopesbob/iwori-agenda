@@ -122,6 +122,43 @@ class SessionRecurrenceTest extends TestCase
         Queue::assertPushed(SyncSessionToGoogleCalendar::class, 5);
     }
 
+    public function test_recorrencia_personalizada_gera_ocorrencias_no_intervalo_informado(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::factory()->for($user)->create();
+
+        $this->actingAs($user)->post('/sessions', [
+            'client_id' => $client->id,
+            'scheduled_at' => '2026-07-01T10:00',
+            'duration_minutes' => 50,
+            'recurrence' => 'custom',
+            'recurrence_count' => 3,
+            'recurrence_custom_days' => 10,
+        ])->assertRedirect();
+
+        $sessions = ClientSession::orderBy('scheduled_at')->get();
+
+        $this->assertCount(3, $sessions);
+        $this->assertSame(
+            ['2026-07-01', '2026-07-11', '2026-07-21'],
+            $sessions->map(fn (ClientSession $s) => $s->scheduled_at->format('Y-m-d'))->all(),
+        );
+    }
+
+    public function test_recorrencia_personalizada_exige_o_intervalo_em_dias(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::factory()->for($user)->create();
+
+        $this->actingAs($user)->post('/sessions', [
+            'client_id' => $client->id,
+            'scheduled_at' => '2026-07-01T10:00',
+            'duration_minutes' => 50,
+            'recurrence' => 'custom',
+            'recurrence_count' => 3,
+        ])->assertSessionHasErrors('recurrence_custom_days');
+    }
+
     public function test_recorrencia_exige_quantidade_de_repeticoes(): void
     {
         $user = User::factory()->create();

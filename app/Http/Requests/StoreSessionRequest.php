@@ -41,6 +41,7 @@ class StoreSessionRequest extends FormRequest
             'recurrence' => ['nullable', Rule::enum(RecurrenceFrequency::class)],
             // Limite de 52 evita gerar uma quantidade excessiva de sessões de uma vez.
             'recurrence_count' => ['nullable', 'required_with:recurrence', 'integer', 'min:2', 'max:52'],
+            'recurrence_custom_days' => ['nullable', 'required_if:recurrence,custom', 'integer', 'min:1', 'max:365'],
         ];
     }
 
@@ -54,6 +55,7 @@ class StoreSessionRequest extends FormRequest
         return [
             'recurrence' => 'frequência de repetição',
             'recurrence_count' => 'quantidade de repetições',
+            'recurrence_custom_days' => 'intervalo em dias',
         ];
     }
 }

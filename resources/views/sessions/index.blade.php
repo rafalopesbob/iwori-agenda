@@ -40,23 +40,26 @@
                     $isCurrentMonth = $day->isSameMonth($grid['month']);
                     $daySessions = $sessions->get($day->toDateString(), collect());
                 @endphp
-                <div class="min-h-28 p-1.5 {{ $isCurrentMonth ? '' : 'bg-gray-50' }}" data-calendar-day="{{ $day->toDateString() }}">
-                    <div class="flex items-center justify-between mb-1">
+                <div class="min-h-28 p-1.5 cursor-pointer transition-colors hover:bg-mvteal-light/40 {{ $isCurrentMonth ? '' : 'bg-gray-50' }}"
+                     data-calendar-day="{{ $day->toDateString() }}"
+                     data-day-url="{{ route('sessions.create', ['date' => $day->toDateString()]) }}"
+                     title="Agendar neste dia">
+                    <div class="flex items-center mb-1">
                         <span class="text-xs font-medium px-1.5 py-0.5 rounded-full
                             {{ $day->isToday() ? 'bg-mvrose-dark text-white' : ($isCurrentMonth ? 'text-gray-700' : 'text-gray-400') }}">
                             {{ $day->day }}
                         </span>
-                        <a href="{{ route('sessions.create', ['date' => $day->toDateString()]) }}"
-                           class="text-gray-300 hover:text-mvteal text-sm leading-none" title="Agendar neste dia">+</a>
                     </div>
 
-                    <div class="space-y-1">
+                    <div class="space-y-1.5">
                         @foreach ($daySessions as $session)
-                            <div class="rounded-lg px-1.5 py-1 text-xs {{ $session->status->badgeClasses() }}"
+                            <div class="rounded-lg px-2 py-1.5 text-xs {{ $session->status->badgeClasses() }}"
+                                 data-session-item
                                  @if ($session->status === App\Enums\SessionStatus::Scheduled)
-                                     draggable="true" data-session-chip="{{ route('sessions.move', $session) }}"
+                                     data-session-chip="{{ route('sessions.move', $session) }}"
                                  @endif>
-                                <div class="font-medium truncate {{ $session->status === App\Enums\SessionStatus::Scheduled ? 'cursor-grab' : '' }}"
+                                <div class="font-medium truncate {{ $session->status === App\Enums\SessionStatus::Scheduled ? 'cursor-grab touch-none select-none' : '' }}"
+                                     @if ($session->status === App\Enums\SessionStatus::Scheduled) data-drag-handle @endif
                                      title="{{ $session->client->name }} — {{ $session->status->label() }}{{ $session->isRecurring() ? ' (série recorrente)' : '' }}">
                                     {{ $session->scheduled_at->format('H:i') }} {{ $session->client->name }}
                                     @if ($session->isRecurring())
@@ -64,45 +67,45 @@
                                     @endif
                                 </div>
 
-                                <div class="flex gap-1 mt-1">
+                                <div class="flex flex-wrap gap-1.5 mt-1.5">
                                     @if ($session->status === App\Enums\SessionStatus::Scheduled)
                                         <form method="POST" action="{{ route('sessions.status', $session) }}">
                                             @csrf
                                             @method('PATCH')
                                             <input type="hidden" name="status" value="completed">
                                             <button type="submit" title="Marcar como Realizado"
-                                                    class="w-5 h-5 rounded bg-mvteal text-white hover:bg-mvteal-dark leading-none">✓</button>
+                                                    class="w-8 h-8 rounded-lg bg-mvteal text-white hover:bg-mvteal-dark leading-none text-base font-bold flex items-center justify-center">✓</button>
                                         </form>
                                         <form method="POST" action="{{ route('sessions.status', $session) }}">
                                             @csrf
                                             @method('PATCH')
                                             <input type="hidden" name="status" value="no_show">
                                             <button type="submit" title="Falta não informada (não avisou — cobrada)"
-                                                    class="w-5 h-5 rounded bg-mvrose-dark text-white hover:bg-mvrose leading-none">✗</button>
+                                                    class="w-8 h-8 rounded-lg bg-mvrose-dark text-white hover:bg-mvrose leading-none text-base font-bold flex items-center justify-center">✗</button>
                                         </form>
                                         <form method="POST" action="{{ route('sessions.status', $session) }}">
                                             @csrf
                                             @method('PATCH')
                                             <input type="hidden" name="status" value="no_show_excused">
                                             <button type="submit" title="Falta informada (avisou — abonada)"
-                                                    class="w-5 h-5 rounded bg-amber-500 text-white hover:bg-amber-600 leading-none">i</button>
+                                                    class="w-8 h-8 rounded-lg bg-amber-500 text-white hover:bg-amber-600 leading-none text-base flex items-center justify-center">⚠</button>
                                         </form>
                                         <form method="POST" action="{{ route('sessions.status', $session) }}">
                                             @csrf
                                             @method('PATCH')
                                             <input type="hidden" name="status" value="canceled">
                                             <button type="submit" title="Cancelar sessão"
-                                                    class="w-5 h-5 rounded bg-gray-400 text-white hover:bg-gray-500 leading-none">–</button>
+                                                    class="w-8 h-8 rounded-lg bg-gray-400 text-white hover:bg-gray-500 leading-none text-base font-bold flex items-center justify-center">–</button>
                                         </form>
                                     @endif
 
                                     @if ($session->status !== App\Enums\SessionStatus::Canceled)
                                         <a href="{{ route('sessions.edit', $session) }}" title="Editar / reagendar"
-                                           class="w-5 h-5 rounded bg-mvindigo-light text-white hover:bg-mvindigo leading-none text-center">✎</a>
+                                           class="w-8 h-8 rounded-lg bg-mvindigo-light text-white hover:bg-mvindigo leading-none text-base flex items-center justify-center">✎</a>
                                         <form method="POST" action="{{ route('sessions.charge', $session) }}">
                                             @csrf
                                             <button type="submit" title="Enviar cobrança desta sessão ({{ $session->client->billing_channel->label() }})"
-                                                    class="w-5 h-5 rounded bg-mvsand-dark text-mvindigo hover:bg-mvlilac leading-none">$</button>
+                                                    class="w-8 h-8 rounded-lg bg-mvsand-dark text-mvindigo hover:bg-mvlilac leading-none text-base font-bold flex items-center justify-center">$</button>
                                         </form>
                                     @endif
                                 </div>
@@ -121,6 +124,6 @@
     <span><span class="inline-block w-3 h-3 rounded bg-mvrose align-middle mr-1"></span>Falta não informada (cobrada)</span>
     <span><span class="inline-block w-3 h-3 rounded bg-amber-300 align-middle mr-1"></span>Falta informada (abonada)</span>
     <span><span class="inline-block w-3 h-3 rounded bg-gray-200 align-middle mr-1"></span>Cancelado</span>
-    <span class="text-gray-400">Dica: arraste uma sessão agendada para outro dia para reagendar.</span>
+    <span class="text-gray-400">Dica: clique num dia vazio para agendar, ou arraste uma sessão agendada para outro dia para reagendar.</span>
 </div>
 @endsection

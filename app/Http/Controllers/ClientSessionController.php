@@ -86,7 +86,9 @@ class ClientSessionController extends Controller
 
             $this->syncToGoogle($session);
 
-            $scheduledAt = $frequency ? $frequency->nextOccurrence($scheduledAt) : $scheduledAt;
+            $scheduledAt = $frequency
+                ? $frequency->nextOccurrence($scheduledAt, $validated['recurrence_custom_days'] ?? null)
+                : $scheduledAt;
         }
 
         $message = $occurrences > 1

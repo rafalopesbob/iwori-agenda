@@ -13,6 +13,7 @@ class RecurrenceFrequencyTest extends TestCase
         $this->assertSame('Semanalmente', RecurrenceFrequency::Weekly->label());
         $this->assertSame('A cada 15 dias', RecurrenceFrequency::Biweekly->label());
         $this->assertSame('Mensalmente', RecurrenceFrequency::Monthly->label());
+        $this->assertSame('Personalizada (a cada X dias)', RecurrenceFrequency::Custom->label());
     }
 
     public function test_semanal_avanca_sete_dias(): void
@@ -42,5 +43,19 @@ class RecurrenceFrequencyTest extends TestCase
 
         // Fevereiro não tem 31: deve cair no último dia do mês, não em março.
         $this->assertSame('2026-02-28', $next->format('Y-m-d'));
+    }
+
+    public function test_personalizada_avanca_a_quantidade_de_dias_informada(): void
+    {
+        $next = RecurrenceFrequency::Custom->nextOccurrence(CarbonImmutable::parse('2026-07-01 10:00:00'), 10);
+
+        $this->assertSame('2026-07-11 10:00:00', $next->format('Y-m-d H:i:s'));
+    }
+
+    public function test_personalizada_sem_dias_informados_avanca_um_dia(): void
+    {
+        $next = RecurrenceFrequency::Custom->nextOccurrence(CarbonImmutable::parse('2026-07-01 10:00:00'));
+
+        $this->assertSame('2026-07-02', $next->format('Y-m-d'));
     }
 }
