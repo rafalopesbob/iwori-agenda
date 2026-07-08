@@ -18,7 +18,7 @@ enum RecurrenceFrequency: string
     {
         return match ($this) {
             self::Weekly => 'Semanalmente',
-            self::Biweekly => 'A cada 15 dias',
+            self::Biweekly => 'Quinzenalmente (semana sim, semana não)',
             self::Monthly => 'Mensalmente',
             self::Custom => 'Personalizada (a cada X dias)',
         };
@@ -33,7 +33,8 @@ enum RecurrenceFrequency: string
     {
         return match ($this) {
             self::Weekly => $date->addWeek(),
-            self::Biweekly => $date->addDays(15),
+            // "Quinzenal" aqui é semana sim, semana não (14 dias), não 15 dias corridos.
+            self::Biweekly => $date->addWeeks(2),
             // addMonthNoOverflow evita que dia 31 vire dia 1 do mês seguinte.
             self::Monthly => $date->addMonthNoOverflow(),
             self::Custom => $date->addDays($customDays ?? 1),

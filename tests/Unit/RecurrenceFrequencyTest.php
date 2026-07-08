@@ -11,7 +11,7 @@ class RecurrenceFrequencyTest extends TestCase
     public function test_labels_em_portugues(): void
     {
         $this->assertSame('Semanalmente', RecurrenceFrequency::Weekly->label());
-        $this->assertSame('A cada 15 dias', RecurrenceFrequency::Biweekly->label());
+        $this->assertSame('Quinzenalmente (semana sim, semana não)', RecurrenceFrequency::Biweekly->label());
         $this->assertSame('Mensalmente', RecurrenceFrequency::Monthly->label());
         $this->assertSame('Personalizada (a cada X dias)', RecurrenceFrequency::Custom->label());
     }
@@ -23,11 +23,12 @@ class RecurrenceFrequencyTest extends TestCase
         $this->assertSame('2026-07-14 14:00:00', $next->format('Y-m-d H:i:s'));
     }
 
-    public function test_quinzenal_avanca_quinze_dias(): void
+    public function test_quinzenal_avanca_duas_semanas(): void
     {
         $next = RecurrenceFrequency::Biweekly->nextOccurrence(CarbonImmutable::parse('2026-07-07 14:00:00'));
 
-        $this->assertSame('2026-07-22 14:00:00', $next->format('Y-m-d H:i:s'));
+        // Semana sim, semana não: 14 dias, mantendo o mesmo dia da semana.
+        $this->assertSame('2026-07-21 14:00:00', $next->format('Y-m-d H:i:s'));
     }
 
     public function test_mensal_avanca_um_mes(): void
