@@ -57,6 +57,50 @@ class SessionCalendarTest extends TestCase
             ->assertSee('Cliente Pontual');
     }
 
+    public function test_visualizacao_semanal_mostra_apenas_a_semana(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::factory()->for($user)->create(['name' => 'Cliente Semanal']);
+        $outro = Client::factory()->for($user)->create(['name' => 'Cliente Fora da Semana']);
+
+        // Semana de 12/07 (dom) a 18/07 (sáb) de 2026.
+        ClientSession::factory()->for($client)->create(['scheduled_at' => '2026-07-14 10:00:00']);
+        ClientSession::factory()->for($outro)->create(['scheduled_at' => '2026-07-20 10:00:00']);
+
+        $this->actingAs($user)->get('/sessions?view=week&date=2026-07-14')
+            ->assertOk()
+            ->assertSee('Cliente Semanal')
+            ->assertDontSee('Cliente Fora da Semana');
+    }
+
+    public function test_visualizacao_diaria_mostra_apenas_o_dia(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::factory()->for($user)->create(['name' => 'Cliente do Dia']);
+        $outro = Client::factory()->for($user)->create(['name' => 'Cliente de Amanhã']);
+
+        ClientSession::factory()->for($client)->create(['scheduled_at' => '2026-07-14 10:00:00']);
+        ClientSession::factory()->for($outro)->create(['scheduled_at' => '2026-07-15 10:00:00']);
+
+        $this->actingAs($user)->get('/sessions?view=day&date=2026-07-14')
+            ->assertOk()
+            ->assertSee('Cliente do Dia')
+            ->assertDontSee('Cliente de Amanhã');
+    }
+
+    public function test_visualizacao_invalida_cai_no_mes(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::factory()->for($user)->create(['name' => 'Cliente Resiliente']);
+
+        ClientSession::factory()->for($client)->create(['scheduled_at' => '2026-07-15 10:00:00']);
+
+        $this->actingAs($user)->get('/sessions?view=banana&month=2026-07')
+            ->assertOk()
+            ->assertSee('Julho')
+            ->assertSee('Cliente Resiliente');
+    }
+
     public function test_agenda_sessao_para_o_proprio_cliente(): void
     {
         $user = User::factory()->create();

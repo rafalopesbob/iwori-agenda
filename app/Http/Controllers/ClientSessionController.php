@@ -25,24 +25,36 @@ use Illuminate\View\View;
 class ClientSessionController extends Controller
 {
     /**
-     * Calendário mensal com as sessões dos clientes do profissional.
+     * Agenda com as sessões dos clientes do profissional,
+     * em visualização por dia, semana ou mês.
      */
     public function index(Request $request, CalendarService $calendar): View
     {
-        $grid = $calendar->monthGrid($request->query('month'));
+        $view = $request->query('view');
+        $view = in_array($view, ['day', 'week', 'month'], true) ? $view : 'month';
+
+        $grid = $week = $day = null;
+
+        if ($view === 'month') {
+            $grid = $calendar->monthGrid($request->query('month'));
+            [$start, $end] = [$grid['start'], $grid['end']];
+        } elseif ($view === 'week') {
+            $week = $calendar->weekRange($request->query('date'));
+            [$start, $end] = [$week['start'], $week['end']];
+        } else {
+            $day = $calendar->resolveDate($request->query('date'));
+            [$start, $end] = [$day->startOfDay(), $day->endOfDay()];
+        }
 
         $sessions = ClientSession::query()
             ->whereHas('client', fn ($query) => $query->where('user_id', $request->user()->id))
             ->with('client:id,name,billing_channel')
-            ->scheduledBetween($grid['start'], $grid['end'])
+            ->scheduledBetween($start, $end)
             ->orderBy('scheduled_at')
             ->get()
             ->groupBy(fn (ClientSession $session) => $session->scheduled_at->toDateString());
 
-        return view('sessions.index', [
-            'grid' => $grid,
-            'sessions' => $sessions,
-        ]);
+        return view('sessions.index', compact('view', 'sessions', 'grid', 'week', 'day'));
     }
 
     /**
