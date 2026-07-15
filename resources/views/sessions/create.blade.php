@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow p-8">
-    <h1 class="text-2xl font-semibold text-mvindigo mb-6">Nova sessão</h1>
+    <h1 class="font-display text-2xl font-semibold text-mvindigo mb-6">Nova sessão</h1>
 
     @if ($clients->isEmpty())
         <p class="text-gray-600">

@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow p-8">
-    <h1 class="text-2xl font-semibold text-mvindigo mb-6">Novo cliente</h1>
+    <h1 class="font-display text-2xl font-semibold text-mvindigo mb-6">Novo cliente</h1>
 
     <form method="POST" action="{{ route('clients.store') }}" class="space-y-4">
         @include('clients._form')

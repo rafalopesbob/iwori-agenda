@@ -6,6 +6,7 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-display: 'Fraunces', 'Instrument Sans', ui-serif, Georgia, serif;
 
     /* Paleta inspirada em Monument Valley */
     --color-mvteal: #14a3a1; /* turquesa dos cenários */
@@ -21,4 +22,22 @@
     --color-mvindigo-light: #55527f;
     --color-mvlilac: #b7b2e2; /* lilás das cúpulas */
     --color-mvlilac-light: #ecebf9;
+}
+
+/* Respiro suave do orbe no portal do hero. */
+@keyframes iwori-orb-float {
+    0%, 100% { transform: translateY(0); opacity: 1; }
+    50% { transform: translateY(-8px); opacity: 0.85; }
+}
+
+.iwori-orb {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: iwori-orb-float 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .iwori-orb {
+        animation: none;
+    }
 }

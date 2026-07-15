@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="max-w-md mx-auto bg-white rounded-2xl shadow p-8">
-    <h1 class="text-2xl font-semibold text-mvindigo mb-6">Entrar</h1>
+    <h1 class="font-display text-2xl font-semibold text-mvindigo mb-6">Entrar</h1>
 
     <form method="POST" action="{{ route('login') }}" class="space-y-4">
         @csrf

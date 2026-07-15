@@ -12,6 +12,12 @@ export default defineConfig({
                 bunny('Instrument Sans', {
                     weights: [400, 500, 600],
                 }),
+                // Serifa humanista para títulos — dá calor e caráter editorial,
+                // distinguindo de SaaS genéricos que só usam sans.
+                bunny('Fraunces', {
+                    weights: [400, 500, 600, 700],
+                    styles: ['normal', 'italic'],
+                }),
             ],
         }),
         tailwindcss(),

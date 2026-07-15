@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-    <h1 class="text-2xl font-semibold text-mvindigo">Bem-vindo(a), {{ auth()->user()->name }}!</h1>
+    <h1 class="font-display text-2xl font-semibold text-mvindigo">Bem-vindo(a), {{ auth()->user()->name }}!</h1>
     <div class="flex items-center gap-2">
         <a href="{{ route('sessions.create') }}" class="bg-mvteal hover:bg-mvteal-dark text-white px-4 py-2 rounded-lg font-medium">Nova sessão</a>
         <a href="{{ route('clients.create') }}" class="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg font-medium">Novo cliente</a>

@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow p-8">
-    <h1 class="text-2xl font-semibold text-mvindigo mb-1">Reagendar sessão</h1>
+    <h1 class="font-display text-2xl font-semibold text-mvindigo mb-1">Reagendar sessão</h1>
     <p class="text-gray-600 mb-6">
         {{ $session->client->name }} —
         <span class="text-xs font-medium px-2 py-1 rounded-full {{ $session->status->badgeClasses() }}">{{ $session->status->label() }}</span>

@@ -20,7 +20,7 @@
 
     {{-- Barra superior (apenas mobile) --}}
     <header class="lg:hidden bg-mvindigo px-4 py-3 flex items-center justify-between">
-        <a href="{{ route('dashboard') }}" class="font-bold text-white">🌿 Iwori <span class="text-mvrose">Agenda</span></a>
+        <a href="{{ route('dashboard') }}" class="font-display text-lg font-semibold text-white">Ìwòrì <span class="text-mvrose">Agenda</span></a>
         <nav class="flex items-center gap-3 text-sm font-medium">
             @foreach ($navItems as $item)
                 <a href="{{ route($item['route']) }}"
@@ -33,7 +33,7 @@
         {{-- Sidebar (desktop) --}}
         <aside class="hidden lg:flex flex-col fixed inset-y-0 w-64 bg-mvindigo">
             <div class="px-6 py-5">
-                <a href="{{ route('dashboard') }}" class="text-lg font-bold text-white">🌿 Iwori <span class="text-mvrose">Agenda</span></a>
+                <a href="{{ route('dashboard') }}" class="font-display text-2xl font-semibold text-white tracking-tight">Ìwòrì <span class="text-mvrose">Agenda</span></a>
             </div>
 
             <nav class="flex-1 px-3 py-2 space-y-1">
@@ -87,7 +87,7 @@
 @else
     <nav class="bg-white border-b border-gray-200">
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-            <a href="{{ route('home') }}" class="text-lg font-bold text-mvindigo">🌿 Iwori <span class="text-mvteal-dark">Agenda</span></a>
+            <a href="{{ route('home') }}" class="font-display text-2xl font-semibold text-mvindigo tracking-tight">Ìwòrì <span class="text-mvteal-dark">Agenda</span></a>
             <div class="flex items-center gap-4 text-sm">
                 <a href="{{ route('login') }}" class="text-gray-600 hover:text-gray-900 font-medium">Entrar</a>
                 <a href="{{ route('register') }}" class="bg-mvteal hover:bg-mvteal-dark text-white px-4 py-2 rounded-xl font-medium">Criar conta</a>
