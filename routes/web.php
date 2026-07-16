@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\ChargeController;
+use App\Http\Controllers\ChargeRecordController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ClientSessionController;
 use App\Http\Controllers\DashboardController;
@@ -56,6 +57,11 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
     Route::post('/billing/{client}/charge', [ChargeController::class, 'client'])->name('billing.charge');
+
+    Route::get('/charges', [ChargeRecordController::class, 'index'])->name('charges.index');
+    Route::patch('/charges/{charge}/pay', [ChargeRecordController::class, 'pay'])->name('charges.pay');
+    Route::patch('/charges/{charge}/reopen', [ChargeRecordController::class, 'reopen'])->name('charges.reopen');
+    Route::get('/charges/{charge}/receipt', [ChargeRecordController::class, 'receipt'])->name('charges.receipt');
 
     Route::get('/google/connect', [GoogleCalendarController::class, 'redirect'])->name('google.connect');
     Route::get('/google/callback', [GoogleCalendarController::class, 'callback'])->name('google.callback');

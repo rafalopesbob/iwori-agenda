@@ -2,7 +2,9 @@
 
 namespace App\Jobs;
 
+use App\Enums\ChargeStatus;
 use App\Mail\ClientChargeMail;
+use App\Models\Charge;
 use App\Models\ClientSession;
 use App\Services\WhatsAppService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -32,6 +34,27 @@ class SendSessionCharge implements ShouldQueue
         $session = $this->session;
         $client = $session->client;
         $channel = $client->billing_channel;
+
+        // Re-disparo da mesma sessão reenvia a mensagem sem duplicar o registro.
+        $exists = Charge::query()
+            ->where('client_session_id', $session->id)
+            ->where('status', ChargeStatus::Pending->value)
+            ->exists();
+
+        if (! $exists) {
+            (new Charge([
+                'period_start' => $session->scheduled_at->toDateString(),
+                'period_end' => $session->scheduled_at->toDateString(),
+                'amount' => (float) $session->value,
+                'status' => ChargeStatus::Pending,
+                'channel' => $channel,
+                'sent_at' => now(),
+            ]))->forceFill([
+                'user_id' => $client->user_id,
+                'client_id' => $client->id,
+                'client_session_id' => $session->id,
+            ])->save();
+        }
 
         if ($channel->sendsEmail() && $client->email) {
             Mail::to($client->email)->queue(new ClientChargeMail(
