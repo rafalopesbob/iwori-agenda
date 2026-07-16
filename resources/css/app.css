@@ -24,6 +24,21 @@
     --color-mvlilac-light: #ecebf9;
 }
 
+/* Evita flash de conteúdo antes do Alpine inicializar. */
+[x-cloak] {
+    display: none !important;
+}
+
+/* Respeita a preferência do sistema por menos movimento. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 /* Respiro suave do orbe no portal do hero. */
 @keyframes iwori-orb-float {
     0%, 100% { transform: translateY(0); opacity: 1; }

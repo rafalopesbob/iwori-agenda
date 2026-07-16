@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-    <h1 class="font-display text-2xl font-semibold text-mvindigo">
+    <h1 class="text-2xl font-semibold text-mvindigo">
         Faturamento — <span class="capitalize">{{ $month->locale('pt_BR')->translatedFormat('F \d\e Y') }}</span>
     </h1>
 

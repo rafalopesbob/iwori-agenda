@@ -1,5 +1,6 @@
 {{-- Chip de sessão usado nas visualizações de mês e semana. --}}
-<div class="rounded-lg px-2 py-1.5 text-xs {{ $session->status->badgeClasses() }}"
+<div class="rounded-lg px-2 py-1.5 text-xs transition-transform duration-150 {{ $session->status->badgeClasses() }}
+            {{ $session->status === App\Enums\SessionStatus::Scheduled ? 'hover:-translate-y-0.5 hover:shadow-sm' : '' }}"
      data-session-item
      @if ($session->status === App\Enums\SessionStatus::Scheduled)
          data-session-chip="{{ route('sessions.move', $session) }}"

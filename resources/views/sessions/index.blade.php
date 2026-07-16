@@ -32,7 +32,7 @@
 @endphp
 
 <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-    <h1 class="font-display text-2xl font-semibold text-mvindigo">{{ $title }}</h1>
+    <h1 class="text-2xl font-semibold text-mvindigo">{{ $title }}</h1>
 
     <div class="flex flex-wrap items-center gap-2">
         {{-- Seletor de visualização --}}

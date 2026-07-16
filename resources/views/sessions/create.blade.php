@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow p-8">
-    <h1 class="font-display text-2xl font-semibold text-mvindigo mb-6">Nova sessão</h1>
+    <h1 class="text-2xl font-semibold text-mvindigo mb-6">Nova sessão</h1>
 
     @if ($clients->isEmpty())
         <p class="text-gray-600">
@@ -74,13 +74,14 @@
                 @enderror
             </div>
 
-            <fieldset class="border border-gray-200 rounded-xl p-4 space-y-4">
+            <fieldset class="border border-gray-200 rounded-xl p-4 space-y-4"
+                      x-data="{ recurrence: '{{ old('recurrence') }}' }">
                 <legend class="text-sm font-semibold text-mvindigo px-2">Repetir sessão</legend>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label for="recurrence" class="block text-sm font-medium mb-1">Frequência</label>
-                        <select id="recurrence" name="recurrence"
+                        <select id="recurrence" name="recurrence" x-model="recurrence"
                                 class="w-full rounded-lg border-gray-300 border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-mvteal">
                             <option value="">Não repetir</option>
                             @foreach (App\Enums\RecurrenceFrequency::cases() as $frequency)
@@ -94,7 +95,13 @@
                         @enderror
                     </div>
 
-                    <div id="recurrence_count_field" class="hidden">
+                    <div x-cloak x-show="recurrence !== ''"
+                         x-transition:enter="transition ease-out duration-200 origin-top"
+                         x-transition:enter-start="opacity-0 -translate-y-1 scale-y-90"
+                         x-transition:enter-end="opacity-100 translate-y-0 scale-y-100"
+                         x-transition:leave="transition ease-in duration-150 origin-top"
+                         x-transition:leave-start="opacity-100 scale-y-100"
+                         x-transition:leave-end="opacity-0 scale-y-90">
                         <label for="recurrence_count" class="block text-sm font-medium mb-1">Quantas vezes?</label>
                         <input id="recurrence_count" type="number" name="recurrence_count" min="2" max="52"
                                value="{{ old('recurrence_count', 4) }}"
@@ -105,7 +112,13 @@
                     </div>
                 </div>
 
-                <div id="recurrence_custom_days_field" class="hidden">
+                <div x-cloak x-show="recurrence === 'custom'"
+                     x-transition:enter="transition ease-out duration-200 origin-top"
+                     x-transition:enter-start="opacity-0 -translate-y-1 scale-y-90"
+                     x-transition:enter-end="opacity-100 translate-y-0 scale-y-100"
+                     x-transition:leave="transition ease-in duration-150 origin-top"
+                     x-transition:leave-start="opacity-100 scale-y-100"
+                     x-transition:leave-end="opacity-0 scale-y-90">
                     <label for="recurrence_custom_days" class="block text-sm font-medium mb-1">A cada quantos dias?</label>
                     <input id="recurrence_custom_days" type="number" name="recurrence_custom_days" min="1" max="365"
                            value="{{ old('recurrence_custom_days') }}" placeholder="Ex.: 10"
@@ -120,22 +133,6 @@
                     ocorrências restantes depois, a qualquer momento.
                 </p>
             </fieldset>
-
-            <script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    const recurrence = document.getElementById('recurrence');
-                    const countField = document.getElementById('recurrence_count_field');
-                    const customDaysField = document.getElementById('recurrence_custom_days_field');
-
-                    const sync = () => {
-                        countField.classList.toggle('hidden', recurrence.value === '');
-                        customDaysField.classList.toggle('hidden', recurrence.value !== 'custom');
-                    };
-
-                    recurrence.addEventListener('change', sync);
-                    sync();
-                });
-            </script>
 
             <div class="flex items-center gap-3 pt-2">
                 <button type="submit" class="bg-mvteal hover:bg-mvteal-dark text-white font-medium px-5 py-2.5 rounded-lg">

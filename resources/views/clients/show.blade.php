@@ -5,7 +5,7 @@
 @section('content')
 <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow p-8">
     <div class="flex items-center justify-between mb-6">
-        <h1 class="font-display text-2xl font-semibold text-mvindigo">{{ $client->name }}</h1>
+        <h1 class="text-2xl font-semibold text-mvindigo">{{ $client->name }}</h1>
         <a href="{{ route('clients.edit', $client) }}" class="text-mvteal-dark hover:underline font-medium">Editar</a>
     </div>
 

@@ -1,3 +1,8 @@
+import Alpine from 'alpinejs';
+
+window.Alpine = Alpine;
+Alpine.start();
+
 // Interações do calendário da Agenda:
 // - clicar num dia vazio abre o agendamento naquela data;
 // - arrastar uma sessão agendada para outro dia a reagenda.
