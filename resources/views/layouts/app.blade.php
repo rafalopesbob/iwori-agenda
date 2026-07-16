@@ -26,6 +26,8 @@
                 <a href="{{ route($item['route']) }}"
                    class="{{ request()->routeIs($item['active']) ? 'text-white font-semibold' : 'text-white/70 hover:text-white' }}">{{ $item['label'] }}</a>
             @endforeach
+            <a href="{{ route('profile.edit') }}"
+               class="{{ request()->routeIs('profile.*') ? 'text-white font-semibold' : 'text-white/70 hover:text-white' }}">Perfil</a>
         </nav>
     </header>
 
@@ -58,15 +60,20 @@
             </nav>
 
             <div class="px-4 py-4 border-t border-white/10 flex items-center justify-between gap-2">
-                <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-9 h-9 rounded-full bg-mvrose text-white flex items-center justify-center font-semibold shrink-0">
-                        {{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}
-                    </div>
+                <a href="{{ route('profile.edit') }}" title="Meu perfil" class="flex items-center gap-3 min-w-0 group">
+                    @if (auth()->user()->photoUrl())
+                        <img src="{{ auth()->user()->photoUrl() }}" alt="Foto de perfil"
+                             class="w-9 h-9 rounded-full object-cover shrink-0">
+                    @else
+                        <div class="w-9 h-9 rounded-full bg-mvrose text-white flex items-center justify-center font-semibold shrink-0">
+                            {{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}
+                        </div>
+                    @endif
                     <div class="min-w-0">
-                        <p class="text-sm font-medium text-white truncate">{{ auth()->user()->name }}</p>
+                        <p class="text-sm font-medium text-white truncate group-hover:underline">{{ auth()->user()->name }}</p>
                         <p class="text-xs text-white/60 truncate">{{ auth()->user()->email }}</p>
                     </div>
-                </div>
+                </a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" title="Sair" class="text-white/50 hover:text-mvrose p-1">

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token', 'google_access_token', 'google_refresh_token'])]
@@ -43,10 +44,36 @@ class User extends Authenticatable
     }
 
     /**
+     * URL pública da foto de perfil, quando houver.
+     */
+    public function photoUrl(): ?string
+    {
+        return $this->photo_path !== null
+            ? Storage::disk('public')->url($this->photo_path)
+            : null;
+    }
+
+    /**
      * Clientes (pacientes/alunos) do profissional.
      */
     public function clients(): HasMany
     {
         return $this->hasMany(Client::class);
+    }
+
+    /**
+     * Templates de e-mail personalizados do profissional.
+     */
+    public function emailTemplates(): HasMany
+    {
+        return $this->hasMany(EmailTemplate::class);
+    }
+
+    /**
+     * Cobranças registradas do profissional.
+     */
+    public function charges(): HasMany
+    {
+        return $this->hasMany(Charge::class);
     }
 }
