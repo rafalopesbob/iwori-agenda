@@ -1,9 +1,7 @@
 <x-mail::message>
 # Sessão confirmada 🌿
 
-Olá, {{ $clientName }}!
-
-Sua sessão com **{{ $professionalName }}** está agendada:
+{!! nl2br(e($renderedBody)) !!}
 
 <x-mail::panel>
 **Data:** {{ $session->scheduled_at->locale('pt_BR')->translatedFormat('l, d \d\e F \d\e Y') }}<br>

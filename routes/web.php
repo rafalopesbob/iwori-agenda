@@ -7,6 +7,7 @@ use App\Http\Controllers\ChargeController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ClientSessionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -47,6 +48,11 @@ Route::middleware('auth')->group(function () {
     Route::patch('/sessions/{session}/move', [ClientSessionController::class, 'move'])->name('sessions.move');
     Route::post('/sessions/{session}/charge', [ChargeController::class, 'session'])->name('sessions.charge');
     Route::post('/sessions/{session}/cancel-recurrence', [ClientSessionController::class, 'cancelRecurrence'])->name('sessions.recurrence.cancel');
+
+    Route::post('/email-templates/preview', [EmailTemplateController::class, 'preview'])->name('email-templates.preview');
+    Route::resource('email-templates', EmailTemplateController::class)
+        ->except(['show'])
+        ->parameters(['email-templates' => 'email_template']);
 
     Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
     Route::post('/billing/{client}/charge', [ChargeController::class, 'client'])->name('billing.charge');

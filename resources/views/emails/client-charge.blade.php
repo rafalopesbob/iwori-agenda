@@ -1,10 +1,7 @@
 <x-mail::message>
 # Resumo do período 🌿
 
-Olá, {{ $client->name }}!
-
-Aqui está o resumo das suas sessões com **{{ $professionalName }}**
-no período de **{{ $start->format('d/m/Y') }}** a **{{ $end->format('d/m/Y') }}**:
+{!! nl2br(e($renderedBody)) !!}
 
 <x-mail::table>
 | Data | Situação | Valor |
