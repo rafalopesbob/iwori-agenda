@@ -17,6 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('charges:dispatch')->dailyAt('08:00');
     })
     ->withMiddleware(function (Middleware $middleware): void {
+        // Na nuvem (ex.: Render) o app fica atrás de um load balancer: confiar nos
+        // headers X-Forwarded-* dá o IP real ao throttle de login e detecta o HTTPS.
+        $middleware->trustProxies(at: '*');
+
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

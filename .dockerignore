@@ -3,14 +3,19 @@
 .github
 .env
 .env.*
+# Secret files do Render são copiados para a raiz do contexto de build.
+*.pem
 node_modules
 vendor
 public/build
 public/hot
+public/storage
 storage/logs/*.log
 tests
 docs
 README.md
+DEPLOY.md
+render.yaml
 compose.yaml
 compose.prod.yaml
 Dockerfile

@@ -1,9 +1,10 @@
 *.log
 .DS_Store
 .env
-.env.backup
-.env.docker
-.env.production
+.env.*
+!.env.example
+!.env.docker.example
+*.pem
 .phpactor.json
 .phpunit.result.cache
 /.agents

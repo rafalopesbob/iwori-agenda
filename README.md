@@ -58,7 +58,7 @@ DB_PASSWORD=defina_uma_senha_forte
 **3. Instale as dependências do Composer** (sem PHP na máquina, use o contêiner auxiliar):
 ```bash
 docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html \
-    laravelsail/php85-composer:latest composer install --ignore-platform-reqs
+    laravelsail/php84-composer:latest composer install --ignore-platform-reqs
 ```
 
 **4. Suba os contêineres com o Sail:**

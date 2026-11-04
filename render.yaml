@@ -1,0 +1,80 @@
+# Blueprint do Render (https://render.com/docs/blueprint-spec).
+# Passo a passo completo do deploy em DEPLOY.md.
+services:
+  - type: web
+    name: iwori-agenda
+    runtime: docker
+    plan: free
+    # Escolha a região mais próxima do banco no Aiven; não dá para mudar depois.
+    region: virginia
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /up
+    envVars:
+      # ── Aplicação ───────────────────────────────────────────────
+      - key: APP_NAME
+        value: Agenda Iwori
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY # base64:... (php artisan key:generate --show)
+        sync: false
+      - key: APP_URL # ex.: https://iwori-agenda.onrender.com
+        sync: false
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: info
+      # O plano Free não tem pre-deploy, worker nem cron: migrations,
+      # fila e agendador rodam no próprio contêiner (docker/entrypoint.sh).
+      - key: RUN_MIGRATIONS
+        value: "1"
+      - key: RUN_WORKERS
+        value: "1"
+
+      # ── Banco: Aiven for MySQL (plano Free) ─────────────────────
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_DATABASE
+        value: defaultdb
+      - key: DB_USERNAME
+        value: avnadmin
+      - key: DB_PASSWORD
+        sync: false
+      # Secret file "aiven-ca.pem" adicionado no painel do Render.
+      - key: MYSQL_ATTR_SSL_CA
+        value: /etc/secrets/aiven-ca.pem
+
+      # ── Sessão, cache e fila ────────────────────────────────────
+      - key: SESSION_DRIVER
+        value: database
+      - key: SESSION_ENCRYPT
+        value: "true"
+      - key: SESSION_SECURE_COOKIE
+        value: "true"
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: FILESYSTEM_DISK
+        value: local
+
+      # ── E-mail: Brevo na porta 2525 (o Free bloqueia 25/465/587) ─
+      - key: MAIL_MAILER
+        value: smtp
+      - key: MAIL_HOST
+        value: smtp-relay.brevo.com
+      - key: MAIL_PORT
+        value: "2525"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: Agenda Iwori
