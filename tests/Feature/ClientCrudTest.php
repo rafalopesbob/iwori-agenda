@@ -37,6 +37,35 @@ class ClientCrudTest extends TestCase
             ->assertDontSee('Cliente do Profissional B');
     }
 
+    public function test_nome_do_cliente_nao_executa_script_no_confirm_de_remocao(): void
+    {
+        $user = User::factory()->create();
+        Client::factory()->for($user)->create(['name' => "');alert(document.domain);('"]);
+
+        $html = $this->actingAs($user)->get('/clients')->assertOk()->getContent();
+
+        // O nome entra no confirm() como string JS escapada, sem fechar a aspa.
+        $this->assertStringNotContainsString("confirm('Remover o cliente &#039;", $html);
+        $apos = chr(92).'u0027'; // aspa simples escapada pelo @js
+        $this->assertStringContainsString('Remover o cliente '.$apos.');alert(document.domain);('.$apos.'?', $html);
+    }
+
+    public function test_valor_antigo_do_formulario_nao_executa_script_no_alpine(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->from('/clients/create')
+            ->post('/clients', ['payment_cycle' => "x'+alert(1)+'"])
+            ->assertSessionHasErrors('payment_cycle');
+
+        $html = $this->actingAs($user)->get('/clients/create')->assertOk()->getContent();
+
+        $this->assertStringNotContainsString("cycle: 'x&#039;+alert(1)+&#039;'", $html);
+        $apos = chr(92).'u0027'; // aspa simples escapada pelo @js
+        $this->assertStringContainsString("cycle: 'x".$apos.'+alert(1)+'.$apos."'", $html);
+    }
+
     public function test_profissional_cadastra_cliente(): void
     {
         $user = User::factory()->create();

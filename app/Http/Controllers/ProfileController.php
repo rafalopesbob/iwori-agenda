@@ -26,13 +26,23 @@ class ProfileController extends Controller
     public function update(UpdateProfileRequest $request): RedirectResponse
     {
         $user = $request->user();
-        $validated = $request->validated();
+        $validated = $request->safe()->only(['name', 'email']);
 
-        if ($validated['email'] !== $user->email) {
+        $emailChanged = $validated['email'] !== $user->email;
+
+        if ($emailChanged) {
             $user->email_verified_at = null;
         }
 
         $user->fill($validated)->save();
+
+        // O novo endereço precisa ser confirmado antes de voltar a liberar os envios.
+        if ($emailChanged) {
+            $user->sendEmailVerificationNotification();
+
+            return redirect()->route('profile.edit')
+                ->with('status', 'Dados atualizados. Enviamos um link de confirmação para '.$user->email.'.');
+        }
 
         return redirect()->route('profile.edit')
             ->with('status', 'Dados atualizados com sucesso.');
@@ -46,6 +56,9 @@ class ProfileController extends Controller
         $request->user()->update([
             'password' => $request->validated('password'),
         ]);
+
+        // Novo ID de sessão; as demais sessões da conta caem pelo middleware auth.session.
+        $request->session()->regenerate();
 
         return redirect()->route('profile.edit')
             ->with('status', 'Senha alterada com sucesso.');

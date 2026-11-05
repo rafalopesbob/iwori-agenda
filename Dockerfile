@@ -24,6 +24,14 @@ FROM php:8.4-apache
 RUN docker-php-ext-install pdo_mysql opcache \
     && a2enmod rewrite headers
 
+# PHP com a configuração de produção (sem display_errors, sem args nos traces) e
+# sem o header X-Powered-By; Apache sem versão/SO no header Server e nas páginas
+# de erro. O zz- garante que estes arquivos carreguem depois dos padrões.
+RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
+    && printf 'expose_php = Off\n' > "$PHP_INI_DIR/conf.d/zz-security.ini" \
+    && printf 'ServerTokens Prod\nServerSignature Off\n' > /etc/apache2/conf-available/zz-security.conf \
+    && a2enconf zz-security
+
 # Aponta o docroot do Apache para o public/ do Laravel.
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \

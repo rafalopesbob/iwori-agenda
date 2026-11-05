@@ -32,7 +32,7 @@ Nenhum dos três pede cartão de crédito no cadastro.
 |---|---|
 | `render.yaml` | **Novo.** Blueprint do Render: serviço Docker no plano Free, health check e todas as variáveis de ambiente. |
 | `docker/entrypoint.sh` | Apache passa a escutar na porta `$PORT` da plataforma. Copia o certificado CA do MySQL para um caminho legível pelo Apache. Cria o link `public/storage`. Com `RUN_WORKERS=1`, sobe fila e agendador no mesmo contêiner. |
-| `bootstrap/app.php` | `trustProxies(at: '*')`: atrás do load balancer, o Laravel passa a ver o IP real (o throttle de login deixa de ser global) e detecta HTTPS (ativa o HSTS). |
+| `bootstrap/app.php` | `trustProxies(at: '*')`: atrás do load balancer, o Laravel detecta HTTPS (ativa o HSTS) e lê o IP do cliente do `X-Forwarded-For`. Com `'*'` esse IP pode ser forjado pelo próprio cliente, então o throttle de login limita também por e-mail (ver `AppServiceProvider`). |
 | `.gitignore` | Ignora qualquer `.env.*` (menos os `.example`) e certificados `*.pem`. |
 | `.dockerignore` | Exclui da imagem `*.pem` (o Render copia secret files para o contexto do build), o link local `public/storage` (quebrava o `docker build`), `render.yaml` e `DEPLOY.md`. |
 | `.env.example` | Documenta a variável `MYSQL_ATTR_SSL_CA` para banco remoto com TLS. |
@@ -189,8 +189,10 @@ Para testar o banco do Aiven a partir da sua máquina, sem mexer no `.env` do di
 - [x] Nenhum segredo está rastreado nem no histórico do git (só os `.env*.example`, sem valores reais).
 - [x] `APP_DEBUG=false` e `APP_ENV=production`: URLs forçadas em HTTPS e senhas checadas contra vazamentos (`uncompromised`).
 - [x] Cookies de sessão `Secure`, `HttpOnly`, `SameSite=lax` e sessão criptografada.
-- [x] Proxies confiáveis configurados: throttle de login por IP real e HSTS ativo.
+- [x] Proxies confiáveis configurados (HSTS ativo) e throttle de login por IP **e** por e-mail, que segura força bruta mesmo com IP forjado.
+- [x] Confirmação de e-mail obrigatória antes de qualquer envio a clientes (cobranças, confirmação de sessão, cobrança diária). O link sai pela fila: exige SMTP configurado, worker ativo (`RUN_WORKERS`) e `APP_URL` correto. Contas criadas antes desta mudança foram marcadas como confirmadas pela migration `mark_existing_users_as_verified`.
 - [x] Conexão com o banco por TLS, validando o CA do Aiven.
+- [ ] `DEMO_MODE` definido **só** no serviço `iwori-agenda-demo`, que usa database e usuário próprios (seção 8).
 - [ ] `APP_KEY` exclusivo de produção, guardado fora do repositório e **nunca trocado**.
 - [ ] Segredos (`APP_KEY`, `DB_PASSWORD`, chave SMTP, `GOOGLE_CLIENT_SECRET`, `WHATSAPP_TOKEN`) só no painel do Render. Nunca em commits, issues ou chats.
 - [ ] Na Brevo, use a **chave SMTP**, não a senha da conta.
@@ -215,6 +217,51 @@ Para testar o banco do Aiven a partir da sua máquina, sem mexer no `.env` do di
 | `Unable to create or change a table without a primary key` | Desative `sql_require_primary_key` em Aiven → *Advanced configuration*. Todas as tabelas atuais têm PK, então só deve aparecer com migrations novas. |
 | `Unsupported cipher or incorrect key length` | `APP_KEY` sem o prefixo `base64:` ou incompleto. |
 | E-mails não chegam | Remetente não verificado na Brevo, ou porta diferente de 2525. |
+
+## 8. Ambiente de demonstração para clientes
+
+O `render.yaml` tem um segundo serviço, `iwori-agenda-demo`. Ele roda o mesmo código com `DEMO_MODE=true` e banco próprio:
+
+- **Login com um clique:** a tela de login ganha o botão **Entrar na demonstração**, que abre a conta fictícia da Helena Rocha sem expor senha.
+- **Dados sempre atuais:** o `DemoSeeder` recria a conta a cada início do contêiner (cada deploy e cada vez que o serviço acorda) e todo dia às 04:00 de Brasília (`DEMO_RESET_AT`). Agenda, presenças e cobranças ficam coerentes com a data de hoje.
+- **Nada sai do sistema:** e-mails vão para o log; WhatsApp e Google Calendar ficam desligados, mesmo que alguém configure as variáveis por engano.
+- **Conta protegida:** cadastro de contas e alterações de perfil (senha, e-mail, foto) ficam bloqueados. Agendar, marcar presença, cobrar e editar templates funcionam e voltam ao estado inicial no próximo reset.
+- **Conta compartilhada:** todos os visitantes usam a mesma conta e veem o que os outros mexeram até o próximo reset.
+
+> **Nunca** defina `DEMO_MODE=true` no serviço de produção: ele desliga os envios aos clientes e abre a entrada na conta demo.
+
+### 8.1 Banco da demo no Aiven
+
+Use um database e um usuário próprios, no mesmo serviço MySQL do Aiven, para que a demo (pública) não tenha acesso aos dados reais.
+
+1. No console do Aiven → seu serviço MySQL → **Databases → Create database**: `iwori_demo`.
+2. **Users → Create user**: `iwori_demo`. Anote a senha gerada.
+3. Conectado como `avnadmin` (MySQL Workbench, HeidiSQL etc., com o `ca.pem`), limite o usuário ao banco da demo:
+
+```sql
+REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'iwori_demo'@'%';
+GRANT ALL PRIVILEGES ON iwori_demo.* TO 'iwori_demo'@'%';
+```
+
+### 8.2 Criar o serviço no Render
+
+1. Gere um `APP_KEY` **diferente** do da produção: `php artisan key:generate --show`.
+2. No Render, **Blueprints → seu blueprint → Sync**. O serviço `iwori-agenda-demo` aparece como novo.
+3. Preencha `APP_KEY`, `APP_URL` (ex.: `https://iwori-agenda-demo.onrender.com`), `DB_HOST`, `DB_PORT` (os mesmos da produção) e `DB_PASSWORD` (do usuário `iwori_demo`).
+4. Adicione o secret file `aiven-ca.pem` também neste serviço (igual ao passo 4.5.5) e faça **Manual Deploy**.
+5. Abra a URL da demo e clique em **Entrar na demonstração**.
+
+**Horas do plano Free:** as 750 horas/mês são por workspace e passam a ser divididas entre produção e demo. Os dois serviços dormem quando ninguém acessa, então normalmente sobra. Se a demo for muito usada, acompanhe em *Billing* ou crie a demo num workspace separado (cada um tem suas 750 horas): se as horas acabarem, os serviços Free do workspace param até o mês seguinte, incluindo a produção.
+
+### 8.3 Demo na sua máquina
+
+Para apresentar localmente, recrie a conta quando quiser (fora de produção não precisa de `DEMO_MODE`):
+
+```bash
+php artisan demo:reset
+```
+
+Para ver localmente exatamente como o cliente vê (botão de entrada, faixa e bloqueios), coloque `DEMO_MODE=true` no `.env`.
 
 ## Referências
 

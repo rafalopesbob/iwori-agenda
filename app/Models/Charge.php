@@ -61,11 +61,12 @@ class Charge extends Model
     }
 
     /**
-     * Cliente cobrado.
+     * Cliente cobrado. Inclui clientes removidos (soft delete) para que o
+     * histórico de cobranças continue mostrando o nome.
      */
     public function client(): BelongsTo
     {
-        return $this->belongsTo(Client::class);
+        return $this->belongsTo(Client::class)->withTrashed();
     }
 
     /**

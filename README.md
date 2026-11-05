@@ -91,8 +91,10 @@ Pronto! A aplicação estará disponível em [http://localhost](http://localhost
 
 **Dados de demonstração** (para apresentações): cria a conta fictícia `helena.rocha@example.com`, com a senha padrão da `UserFactory`, já com clientes, agenda, presenças e cobranças coerentes com a data de hoje. Pode rodar de novo a qualquer momento: a conta é recriada do zero.
 ```bash
-./vendor/bin/sail artisan db:seed --class=DemoSeeder
+./vendor/bin/sail artisan demo:reset
 ```
+
+**Demo online para clientes:** com `DEMO_MODE=true`, o app vira um ambiente de demonstração público: botão "Entrar na demonstração" no login, dados recriados todo dia e nenhuma mensagem enviada. O serviço `iwori-agenda-demo` já está no `render.yaml`; o passo a passo está na seção 8 do [DEPLOY.md](DEPLOY.md).
 
 ---
 

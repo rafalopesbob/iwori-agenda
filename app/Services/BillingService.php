@@ -32,7 +32,7 @@ class BillingService
         $reference = $this->calendar->resolveMonth($month);
 
         $sessions = ClientSession::query()
-            ->whereHas('client', fn ($query) => $query->where('user_id', $user->id))
+            ->whereHas('client', fn ($query) => $query->withoutTrashed()->where('user_id', $user->id))
             ->with('client:id,name,billing_channel')
             ->scheduledBetween($reference, $reference->endOfMonth())
             ->get();

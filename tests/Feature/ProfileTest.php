@@ -44,6 +44,7 @@ class ProfileTest extends TestCase
             ->patch('/profile', [
                 'name' => 'Novo Nome',
                 'email' => 'novo@teste.com',
+                'email_current_password' => 'password',
             ])
             ->assertRedirect('/profile');
 
@@ -59,9 +60,53 @@ class ProfileTest extends TestCase
         $this->actingAs($user)->patch('/profile', [
             'name' => $user->name,
             'email' => 'outro@teste.com',
+            'email_current_password' => 'password',
         ]);
 
         $this->assertNull($user->refresh()->email_verified_at);
+    }
+
+    public function test_trocar_email_sem_senha_atual_e_rejeitado(): void
+    {
+        $user = User::factory()->create(['email' => 'original@teste.com']);
+
+        $this->actingAs($user)
+            ->from('/profile')
+            ->patch('/profile', [
+                'name' => $user->name,
+                'email' => 'invasor@teste.com',
+            ])
+            ->assertSessionHasErrors('email_current_password');
+
+        $this->assertSame('original@teste.com', $user->refresh()->email);
+    }
+
+    public function test_trocar_email_com_senha_errada_e_rejeitado(): void
+    {
+        $user = User::factory()->create(['email' => 'original@teste.com']);
+
+        $this->actingAs($user)
+            ->from('/profile')
+            ->patch('/profile', [
+                'name' => $user->name,
+                'email' => 'invasor@teste.com',
+                'email_current_password' => 'senha-errada',
+            ])
+            ->assertSessionHasErrors('email_current_password');
+
+        $this->assertSame('original@teste.com', $user->refresh()->email);
+    }
+
+    public function test_trocar_so_o_nome_nao_pede_senha(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->patch('/profile', ['name' => 'Outro Nome', 'email' => $user->email])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect('/profile');
+
+        $this->assertSame('Outro Nome', $user->refresh()->name);
     }
 
     public function test_manter_email_preserva_verificacao(): void
@@ -119,6 +164,37 @@ class ProfileTest extends TestCase
             ->assertRedirect('/profile');
 
         $this->assertTrue(Hash::check('Nova-Senha-Forte-456!', $user->refresh()->password));
+    }
+
+    public function test_trocar_senha_mantem_a_sessao_atual_logada(): void
+    {
+        $user = User::factory()->create(['password' => 'Senha-Atual-123!']);
+
+        $this->actingAs($user)->get('/dashboard')->assertOk();
+
+        $this->put('/profile/password', [
+            'current_password' => 'Senha-Atual-123!',
+            'password' => 'Nova-Senha-Forte-456!',
+            'password_confirmation' => 'Nova-Senha-Forte-456!',
+        ])->assertRedirect('/profile');
+
+        $this->get('/dashboard')->assertOk();
+    }
+
+    public function test_sessao_aberta_antes_da_troca_de_senha_e_derrubada(): void
+    {
+        $user = User::factory()->create(['password' => 'Senha-Atual-123!']);
+
+        // Simula outra sessão (ex.: outro computador) que guardou o hash da senha antiga.
+        $hashAntigo = auth()->guard('web')->hashPasswordForCookie($user->password);
+        $user->update(['password' => 'Nova-Senha-Forte-456!']);
+
+        $this->actingAs($user)
+            ->withSession(['password_hash_web' => $hashAntigo])
+            ->get('/dashboard')
+            ->assertRedirect('/login');
+
+        $this->assertGuest();
     }
 
     public function test_nova_senha_respeita_politica_forte(): void

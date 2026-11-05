@@ -43,8 +43,8 @@
 
 <fieldset class="rounded-2xl border border-line p-5 space-y-4"
           x-data="{
-              cycle: '{{ old('payment_cycle', $client->payment_cycle->value ?? 'monthly') }}',
-              channel: '{{ old('billing_channel', $client->billing_channel->value ?? 'email') }}',
+              cycle: @js(old('payment_cycle', $client->payment_cycle->value ?? 'monthly')),
+              channel: @js(old('billing_channel', $client->billing_channel->value ?? 'email')),
           }">
     <legend class="px-2 text-sm font-semibold text-ink">Cobrança</legend>
 

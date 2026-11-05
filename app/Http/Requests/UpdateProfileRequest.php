@@ -25,6 +25,14 @@ class UpdateProfileRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($this->user()->id)],
+            // Trocar o e-mail da conta exige a senha atual: quem estiver com uma sessão
+            // aberta (ex.: computador compartilhado) não consegue tomar a conta.
+            'email_current_password' => [
+                Rule::requiredIf(fn () => $this->input('email') !== $this->user()->email),
+                'nullable',
+                'string',
+                'current_password',
+            ],
         ];
     }
 
@@ -38,6 +46,7 @@ class UpdateProfileRequest extends FormRequest
         return [
             'name' => 'nome',
             'email' => 'e-mail',
+            'email_current_password' => 'senha atual',
         ];
     }
 }

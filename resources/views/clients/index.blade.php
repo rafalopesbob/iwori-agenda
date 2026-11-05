@@ -62,7 +62,7 @@
                                     <a href="{{ route('clients.edit', $client) }}"
                                        class="inline-flex items-center min-h-10 px-2 font-medium text-brand hover:underline">Editar</a>
                                     <form method="POST" action="{{ route('clients.destroy', $client) }}" class="inline"
-                                          onsubmit="return confirm('Remover o cliente {{ $client->name }}? O histórico de sessões será preservado.');">
+                                          onsubmit="return confirm(@js('Remover o cliente '.$client->name.'? O histórico de sessões será preservado.'));">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"

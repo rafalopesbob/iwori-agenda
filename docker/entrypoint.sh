@@ -23,6 +23,13 @@ if [ "$RUN_MIGRATIONS" = "1" ]; then
     php artisan migrate --force
 fi
 
+# Ambiente de demonstração: recria a conta demo a cada início do contêiner
+# (no Render Free isso inclui cada vez que o serviço acorda), além do reset
+# diário agendado. Nunca defina DEMO_MODE no serviço de produção.
+if [ "$DEMO_MODE" = "true" ] || [ "$DEMO_MODE" = "1" ]; then
+    php artisan demo:reset
+fi
+
 # Fotos de perfil ficam no disco "public"; o link public/storage não vem do git.
 [ -e public/storage ] || php artisan storage:link
 

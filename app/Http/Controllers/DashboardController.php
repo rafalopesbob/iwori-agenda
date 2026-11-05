@@ -19,7 +19,7 @@ class DashboardController extends Controller
         $report = $billing->monthlyReport($user);
 
         $sessions = ClientSession::query()
-            ->whereHas('client', fn ($query) => $query->where('user_id', $user->id));
+            ->whereHas('client', fn ($query) => $query->withoutTrashed()->where('user_id', $user->id));
 
         $todaySessions = (clone $sessions)
             ->with('client:id,name')

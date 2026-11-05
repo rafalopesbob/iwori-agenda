@@ -2,7 +2,7 @@
 # Para desenvolvimento local, use o Herd ou o Sail (compose.yaml).
 #
 # Uso:
-#   cp .env.docker.example .env.docker   # e preencha APP_KEY e DB_PASSWORD
+#   cp .env.docker.example .env.docker   # e preencha APP_KEY, DB_PASSWORD e DB_ROOT_PASSWORD
 #   docker compose -f compose.prod.yaml --env-file .env.docker up -d --build
 services:
     app:
@@ -22,7 +22,9 @@ services:
         build: .
         image: iwori-agenda
         restart: unless-stopped
-        command: php artisan queue:work --tries=3 --timeout=90
+        # O entrypoint roda como root (link do storage, caches); o worker em si
+        # roda como www-data, igual ao Apache.
+        command: runuser -u www-data -- php artisan queue:work --tries=3 --timeout=90
         env_file: .env.docker
         depends_on:
             mysql:
@@ -34,7 +36,7 @@ services:
         build: .
         image: iwori-agenda
         restart: unless-stopped
-        command: php artisan schedule:work
+        command: runuser -u www-data -- php artisan schedule:work
         env_file: .env.docker
         depends_on:
             mysql:
@@ -46,15 +48,18 @@ services:
         image: 'mysql:8.4'
         restart: unless-stopped
         # Sem porta publicada: o banco só é alcançável pelos containers da stack.
+        # Root com senha própria: vazar a senha da aplicação não entrega o root.
+        # Numa instalação existente, o MySQL só lê MYSQL_ROOT_PASSWORD ao criar o
+        # volume; para trocar a senha do root já criado, use ALTER USER.
         environment:
-            MYSQL_ROOT_PASSWORD: '${DB_PASSWORD:?defina DB_PASSWORD no .env.docker}'
+            MYSQL_ROOT_PASSWORD: '${DB_ROOT_PASSWORD:?defina DB_ROOT_PASSWORD no .env.docker (diferente de DB_PASSWORD)}'
             MYSQL_DATABASE: '${DB_DATABASE:-iwori_agenda}'
             MYSQL_USER: '${DB_USERNAME:-iwori}'
-            MYSQL_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_PASSWORD: '${DB_PASSWORD:?defina DB_PASSWORD no .env.docker}'
         volumes:
             - 'iwori-mysql:/var/lib/mysql'
         healthcheck:
-            test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-p${DB_PASSWORD}']
+            test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-u${DB_USERNAME:-iwori}', '-p${DB_PASSWORD}']
             interval: 5s
             retries: 12
             timeout: 5s

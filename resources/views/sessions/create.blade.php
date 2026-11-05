@@ -75,7 +75,7 @@
             </div>
 
             <fieldset class="rounded-2xl border border-line p-5 space-y-4"
-                      x-data="{ recurrence: '{{ old('recurrence') }}' }">
+                      x-data="{ recurrence: @js((string) old('recurrence')) }">
                 <legend class="px-2 text-sm font-semibold text-ink">Repetir sessão</legend>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

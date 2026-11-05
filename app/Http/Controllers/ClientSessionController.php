@@ -47,7 +47,7 @@ class ClientSessionController extends Controller
         }
 
         $sessions = ClientSession::query()
-            ->whereHas('client', fn ($query) => $query->where('user_id', $request->user()->id))
+            ->whereHas('client', fn ($query) => $query->withoutTrashed()->where('user_id', $request->user()->id))
             ->with('client:id,name,billing_channel,payment_cycle,payment_day,payment_interval_days')
             ->scheduledBetween($start, $end)
             ->orderBy('scheduled_at')
@@ -92,7 +92,8 @@ class ClientSessionController extends Controller
             $first ??= $session;
 
             // Evita enviar a confirmação por e-mail uma vez por ocorrência da série.
-            if ($i === 0 && $client->email) {
+            // Conta sem e-mail confirmado agenda normalmente, mas não envia nada ao cliente.
+            if ($i === 0 && $client->email && $request->user()->hasVerifiedEmail()) {
                 Mail::to($client->email)->queue(new SessionScheduledMail($session));
             }
 
@@ -106,6 +107,10 @@ class ClientSessionController extends Controller
         $message = $occurrences > 1
             ? "Sessão agendada com {$occurrences} repetições."
             : 'Sessão agendada com sucesso.';
+
+        if ($client->email && ! $request->user()->hasVerifiedEmail()) {
+            $message .= ' A confirmação não foi enviada ao cliente: confirme seu e-mail para liberar os envios.';
+        }
 
         return redirect()
             ->route('sessions.index', ['month' => $first->scheduled_at->format('Y-m')])

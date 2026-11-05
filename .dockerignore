@@ -11,6 +11,26 @@ public/build
 public/hot
 public/storage
 storage/logs/*.log
+# Artefatos locais que não podem entrar numa camada da imagem: uploads, sessões,
+# views compiladas e, principalmente, bootstrap/cache/config.php (que guarda os
+# segredos do .env em texto puro após um config:cache local). Os .gitignore ficam
+# para que as pastas continuem existindo na imagem.
+storage/app/public/*
+!storage/app/public/.gitignore
+storage/app/private/*
+!storage/app/private/.gitignore
+storage/framework/cache/data/*
+!storage/framework/cache/data/.gitignore
+storage/framework/sessions/*
+!storage/framework/sessions/.gitignore
+storage/framework/testing/*
+!storage/framework/testing/.gitignore
+storage/framework/views/*
+!storage/framework/views/.gitignore
+bootstrap/cache/*.php
+database/*.sqlite*
+.phpunit.cache
+.phpunit.result.cache
 tests
 docs
 README.md

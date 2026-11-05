@@ -427,4 +427,24 @@ class ChargeTest extends TestCase
 
         Queue::assertNotPushed(SendSessionCharge::class);
     }
+
+    public function test_disparo_de_cobrancas_tem_limite_por_hora_por_usuario(): void
+    {
+        Queue::fake();
+
+        $user = User::factory()->create();
+        $outro = User::factory()->create();
+        $session = ClientSession::factory()->for(Client::factory()->for($user))->completed()->create();
+        $sessaoDoOutro = ClientSession::factory()->for(Client::factory()->for($outro))->completed()->create();
+
+        foreach (range(1, 60) as $i) {
+            $this->actingAs($user)->post("/sessions/{$session->id}/charge")->assertRedirect();
+        }
+
+        $this->actingAs($user)->post("/sessions/{$session->id}/charge")->assertStatus(429);
+        Queue::assertPushed(SendSessionCharge::class, 60);
+
+        // O limite é de cada conta: os outros profissionais continuam cobrando.
+        $this->actingAs($outro)->post("/sessions/{$sessaoDoOutro->id}/charge")->assertRedirect();
+    }
 }

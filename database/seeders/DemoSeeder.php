@@ -67,6 +67,12 @@ class DemoSeeder extends Seeder
 
     public function run(): void
     {
+        // A conta demo usa senha conhecida: nunca deve existir num banco de produção
+        // real. A exceção é o ambiente de demonstração, com banco próprio (DEMO_MODE).
+        if (app()->isProduction() && ! config('demo.enabled')) {
+            throw new \RuntimeException('DemoSeeder não roda em produção (APP_ENV=production) fora do ambiente de demonstração (DEMO_MODE=true).');
+        }
+
         mt_srand(2026);
 
         $today = CarbonImmutable::today();

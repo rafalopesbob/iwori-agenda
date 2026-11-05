@@ -11,6 +11,22 @@ class DemoSeederTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_nao_roda_em_producao(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        try {
+            $this->app->make(DemoSeeder::class)->run();
+            $this->fail('O DemoSeeder deveria recusar o ambiente de produção.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('produção', $e->getMessage());
+        } finally {
+            $this->app->detectEnvironment(fn () => 'testing');
+        }
+
+        $this->assertFalse(User::where('email', DemoSeeder::EMAIL)->exists());
+    }
+
     public function test_massa_de_demonstracao_e_coerente_e_pode_ser_recriada(): void
     {
         $this->seed(DemoSeeder::class);

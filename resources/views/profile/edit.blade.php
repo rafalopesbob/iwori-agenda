@@ -56,7 +56,8 @@
     <div class="bg-white rounded-2xl border border-line p-6 sm:p-8">
         <h2 class="text-lg font-semibold tracking-tight text-ink mb-5">Dados básicos</h2>
 
-        <form method="POST" action="{{ route('profile.update') }}" class="space-y-5">
+        <form method="POST" action="{{ route('profile.update') }}" class="space-y-5"
+              x-data="{ email: @js(old('email', $user->email)), original: @js($user->email) }">
             @csrf
             @method('PATCH')
 
@@ -71,9 +72,21 @@
 
             <div>
                 <label for="email" class="block text-sm font-medium text-ink mb-1.5">E-mail *</label>
-                <input id="email" type="email" name="email" value="{{ old('email', $user->email) }}" required
+                <input id="email" type="email" name="email" value="{{ old('email', $user->email) }}" required x-model="email"
                        class="w-full rounded-xl border border-line-strong bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-subtle focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/25">
                 @error('email')
+                    <p class="text-sm text-danger-ink mt-1.5">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Só aparece ao trocar o e-mail: a troca exige confirmar a senha atual. --}}
+            <div x-cloak x-show="email !== original">
+                <label for="email_current_password" class="block text-sm font-medium text-ink mb-1.5">Senha atual *</label>
+                <input id="email_current_password" type="password" name="email_current_password" autocomplete="current-password"
+                       :required="email !== original"
+                       class="w-full rounded-xl border border-line-strong bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-subtle focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/25">
+                <p class="text-sm text-muted mt-1.5">Para trocar o e-mail da conta, confirme sua senha.</p>
+                @error('email_current_password')
                     <p class="text-sm text-danger-ink mt-1.5">{{ $message }}</p>
                 @enderror
             </div>

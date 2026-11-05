@@ -88,4 +88,37 @@ class AuthenticationTest extends TestCase
 
         $response->assertStatus(429);
     }
+
+    public function test_trocar_o_ip_no_x_forwarded_for_nao_contorna_o_rate_limit(): void
+    {
+        $user = User::factory()->create();
+
+        foreach (range(1, 5) as $i) {
+            $this->withHeader('X-Forwarded-For', "203.0.113.{$i}")
+                ->post('/login', ['email' => $user->email, 'password' => 'senha-errada']);
+        }
+
+        $this->withHeader('X-Forwarded-For', '203.0.113.99')
+            ->post('/login', ['email' => $user->email, 'password' => 'senha-errada'])
+            ->assertStatus(429);
+    }
+
+    public function test_rate_limit_por_email_ignora_maiusculas_e_espacos(): void
+    {
+        $user = User::factory()->create(['email' => 'ana@teste.com']);
+
+        foreach (range(1, 5) as $i) {
+            $this->withHeader('X-Forwarded-For', "203.0.113.{$i}")
+                ->post('/login', ['email' => " ANA@teste.com{$this->spaces($i)}", 'password' => 'senha-errada']);
+        }
+
+        $this->withHeader('X-Forwarded-For', '203.0.113.99')
+            ->post('/login', ['email' => 'Ana@Teste.com', 'password' => 'senha-errada'])
+            ->assertStatus(429);
+    }
+
+    private function spaces(int $count): string
+    {
+        return str_repeat(' ', $count);
+    }
 }

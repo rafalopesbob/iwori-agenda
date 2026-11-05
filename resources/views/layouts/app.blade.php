@@ -126,6 +126,17 @@
     </aside>
 
     <div class="lg:pl-64">
+        @include('layouts.partials.demo-banner')
+
+        @if (! auth()->user()->hasVerifiedEmail() && ! request()->routeIs('verification.notice'))
+            <div role="status" class="border-b border-warn/30 bg-warn-tint text-warn-ink">
+                <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                    <span>Confirme seu e-mail para liberar o envio de confirmações e cobranças aos seus clientes.</span>
+                    <a href="{{ route('verification.notice') }}" class="inline-flex items-center min-h-10 font-semibold underline">Confirmar e-mail</a>
+                </div>
+            </div>
+        @endif
+
         @hasSection('bleed')
             <main class="pb-24 lg:pb-0">@yield('content')</main>
         @else
@@ -191,6 +202,8 @@
         </div>
     </nav>
 @else
+    @include('layouts.partials.demo-banner')
+
     <header class="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex flex-wrap items-center justify-between gap-4">
         <a href="{{ route('home') }}" class="flex items-center gap-2.5 text-[19px] font-semibold tracking-tight text-ink">
             <x-brand-mark class="size-7" />
@@ -201,7 +214,9 @@
             <a href="{{ route('home') }}#como-funciona" class="hidden md:inline-flex items-center min-h-11 px-3 text-[15px] font-medium text-muted hover:text-ink">Como funciona</a>
             <a href="{{ route('home') }}#para-quem" class="hidden md:inline-flex items-center min-h-11 px-3 text-[15px] font-medium text-muted hover:text-ink">Para quem</a>
             <a href="{{ route('login') }}" class="inline-flex items-center min-h-11 px-[18px] md:ml-2 rounded-full border border-line-strong bg-white text-[15px] font-semibold text-ink hover:bg-canvas">Entrar</a>
-            <a href="{{ route('register') }}" class="inline-flex items-center min-h-11 px-[18px] rounded-full bg-brand hover:bg-brand-dark text-[15px] font-semibold text-white">Criar conta</a>
+            @unless (config('demo.enabled'))
+                <a href="{{ route('register') }}" class="inline-flex items-center min-h-11 px-[18px] rounded-full bg-brand hover:bg-brand-dark text-[15px] font-semibold text-white">Criar conta</a>
+            @endunless
         </nav>
     </header>
 

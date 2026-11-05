@@ -16,6 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Cobranças dos ciclos de pagamento que vencem no dia, em horário
         // comercial de Brasília (o app roda em UTC).
         $schedule->command('charges:dispatch')->dailyAt('09:00')->timezone('America/Sao_Paulo');
+
+        // Ambiente de demonstração: a conta demo volta ao estado inicial todo dia.
+        if (config('demo.enabled')) {
+            $schedule->command('demo:reset')->dailyAt(config('demo.reset_at'))->timezone('America/Sao_Paulo');
+        }
     })
     ->withMiddleware(function (Middleware $middleware): void {
         // Na nuvem (ex.: Render) o app fica atrás de um load balancer: confiar nos
@@ -23,6 +28,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
 
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+
+        $middleware->alias([
+            'not-demo' => \App\Http\Middleware\DisabledInDemo::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

@@ -34,11 +34,15 @@ class ClientSession extends Model
     }
 
     /**
-     * Cliente da sessão.
+     * Cliente da sessão. Inclui clientes removidos (soft delete) para que o
+     * histórico e as policies continuem resolvendo o dono da sessão.
+     *
+     * Atenção: whereHas('client') passa a incluir clientes removidos;
+     * listagens que devem escondê-los precisam de withoutTrashed().
      */
     public function client(): BelongsTo
     {
-        return $this->belongsTo(Client::class);
+        return $this->belongsTo(Client::class)->withTrashed();
     }
 
     /**

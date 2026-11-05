@@ -34,6 +34,8 @@ class DispatchDueCharges extends Command
 
         $due = Client::query()
             ->active()
+            // Profissional sem e-mail confirmado não dispara cobranças para os clientes.
+            ->whereHas('user', fn ($query) => $query->whereNotNull('email_verified_at'))
             ->get()
             ->filter(fn (Client $client) => $client->isChargeDueOn($date));
 

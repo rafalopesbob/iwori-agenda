@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -32,6 +33,9 @@ class RegisteredUserController extends Controller
         ]);
 
         $user = User::create($validated);
+
+        // Dispara o e-mail de confirmação (listener padrão do Laravel para MustVerifyEmail).
+        event(new Registered($user));
 
         Auth::login($user);
 
