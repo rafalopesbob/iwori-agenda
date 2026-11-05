@@ -48,7 +48,7 @@ class ClientSessionController extends Controller
 
         $sessions = ClientSession::query()
             ->whereHas('client', fn ($query) => $query->where('user_id', $request->user()->id))
-            ->with('client:id,name,billing_channel')
+            ->with('client:id,name,billing_channel,payment_cycle,payment_day,payment_interval_days')
             ->scheduledBetween($start, $end)
             ->orderBy('scheduled_at')
             ->get()

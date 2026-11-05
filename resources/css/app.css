@@ -4,24 +4,36 @@
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
-    --font-display: 'Fraunces', 'Instrument Sans', ui-serif, Georgia, serif;
 
-    /* Paleta inspirada em Monument Valley */
-    --color-mvteal: #14a3a1; /* turquesa dos cenários */
-    --color-mvteal-dark: #0d827f;
-    --color-mvteal-light: #d5f0ee;
-    --color-mvrose: #e08fa9; /* rosa empoeirado das torres */
-    --color-mvrose-dark: #c96b8c;
-    --color-mvrose-light: #fae4eb;
-    --color-mvsand: #f6efe2; /* areia/creme dos templos */
-    --color-mvsand-dark: #e9dcc2;
-    --color-mvindigo: #3c3a68; /* índigo do céu noturno */
-    --color-mvindigo-dark: #312f57;
-    --color-mvindigo-light: #55527f;
-    --color-mvlilac: #b7b2e2; /* lilás das cúpulas */
-    --color-mvlilac-light: #ecebf9;
+    /* Modelo 1 ("Evolução"): o índigo e a turquesa do Iwori sobre uma base clara.
+       Os textos (ink, muted e os *-ink) passam de 4.5:1 sobre branco e sobre os *-tint. */
+    --color-canvas: #f7f7fb; /* fundo das páginas */
+    --color-ink: #1c1b33; /* texto principal */
+    --color-muted: #5b5a72; /* texto secundário */
+    --color-subtle: #8a89a0; /* só para itens desabilitados ou fora do mês */
+    --color-line: #e6e5ef; /* bordas de cartões e divisórias */
+    --color-line-strong: #d9d8e6; /* bordas de campos e botões secundários */
+    --color-neutral-tint: #f1f1f5;
+
+    --color-brand: #3c3a68; /* índigo: ações principais e navegação ativa */
+    --color-brand-dark: #2e2c54;
+    --color-brand-tint: #eeedf7;
+
+    --color-accent: #0b7a77; /* turquesa: sessão realizada e confirmações */
+    --color-accent-ink: #08625f;
+    --color-accent-tint: #ddf1ef;
+
+    --color-danger: #b4466b; /* rosa: falta sem aviso, atraso e remoção */
+    --color-danger-ink: #9e2f55;
+    --color-danger-tint: #fbe7ee;
+
+    --color-warn: #b07a1f; /* âmbar: falta com aviso */
+    --color-warn-ink: #7a4d00;
+    --color-warn-tint: #fcefd6;
+
+    --color-blush: #e7a3b8; /* arco interno do símbolo */
 }
 
 /* Evita flash de conteúdo antes do Alpine inicializar. */
@@ -36,23 +48,5 @@
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
-    }
-}
-
-/* Respiro suave do orbe no portal do hero. */
-@keyframes iwori-orb-float {
-    0%, 100% { transform: translateY(0); opacity: 1; }
-    50% { transform: translateY(-8px); opacity: 0.85; }
-}
-
-.iwori-orb {
-    transform-box: fill-box;
-    transform-origin: center;
-    animation: iwori-orb-float 6s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .iwori-orb {
-        animation: none;
     }
 }

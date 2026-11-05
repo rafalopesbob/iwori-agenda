@@ -50,11 +50,11 @@ enum SessionStatus: string
     public function badgeClasses(): string
     {
         return match ($this) {
-            self::Scheduled => 'bg-mvlilac-light text-mvindigo',
-            self::Completed => 'bg-mvteal-light text-mvteal-dark',
-            self::NoShowUnexcused => 'bg-mvrose-light text-mvrose-dark',
-            self::NoShowExcused => 'bg-amber-100 text-amber-800',
-            self::Canceled => 'bg-gray-100 text-gray-500 line-through',
+            self::Scheduled => 'bg-brand-tint text-brand',
+            self::Completed => 'bg-accent-tint text-accent-ink',
+            self::NoShowUnexcused => 'bg-danger-tint text-danger-ink',
+            self::NoShowExcused => 'bg-warn-tint text-warn-ink',
+            self::Canceled => 'bg-neutral-tint text-muted line-through',
         };
     }
 }

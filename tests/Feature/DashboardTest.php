@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Charge;
 use App\Models\Client;
 use App\Models\ClientSession;
 use App\Models\User;
@@ -60,5 +61,38 @@ class DashboardTest extends TestCase
         $this->actingAs($user)->get('/dashboard')
             ->assertOk()
             ->assertDontSee('Cliente Alheio');
+    }
+
+    public function test_painel_mostra_cobrancas_pendentes_e_total_a_receber(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::factory()->for($user)->create(['name' => 'Cliente Devedor']);
+        Charge::factory()->pending()->create(['user_id' => $user->id, 'client_id' => $client->id, 'amount' => 450]);
+        Charge::factory()->paid()->create(['user_id' => $user->id, 'client_id' => $client->id, 'amount' => 999]);
+        Charge::factory()->pending()->create(['amount' => 777]);
+
+        $this->actingAs($user)->get('/dashboard')
+            ->assertOk()
+            ->assertSee('Cliente Devedor')
+            ->assertSee('R$ 450,00')
+            ->assertSee('1 cobrança pendente')
+            ->assertDontSee('999,00')
+            ->assertDontSee('777,00');
+    }
+
+    public function test_painel_resume_os_proximos_dias_com_sessao(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::factory()->for($user)->create();
+        ClientSession::factory()->for($client)->count(2)->create(['scheduled_at' => now()->addDays(2)->setTime(10, 0)]);
+        ClientSession::factory()->for($client)->canceled()->create(['scheduled_at' => now()->addDays(3)->setTime(10, 0)]);
+
+        $label = fn ($date) => ucfirst($date->locale('pt_BR')->translatedFormat('l, j'));
+
+        $this->actingAs($user)->get('/dashboard')
+            ->assertOk()
+            ->assertSee($label(now()->addDays(2)))
+            ->assertDontSee($label(now()->addDays(3)))
+            ->assertDontSee('Nenhuma sessão nas próximas duas semanas.');
     }
 }

@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
     const DRAG_THRESHOLD = 6;
-    const highlight = ['ring-2', 'ring-mvteal', 'ring-inset'];
+    const highlight = ['ring-2', 'ring-accent', 'ring-inset'];
 
     // Clicar em qualquer parte vazia do dia (fora de uma sessão) agenda ali.
     // Checa [data-session-item], presente em toda sessão (não só nas arrastáveis),

@@ -29,60 +29,99 @@
         $nextParams = ['view' => 'day', 'date' => $day->addDay()->toDateString()];
         $todayParams = ['view' => 'day'];
     }
+
+    $legend = [
+        App\Enums\SessionStatus::Scheduled,
+        App\Enums\SessionStatus::Completed,
+        App\Enums\SessionStatus::NoShowUnexcused,
+        App\Enums\SessionStatus::NoShowExcused,
+        App\Enums\SessionStatus::Canceled,
+    ];
 @endphp
 
-<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-    <h1 class="text-2xl font-semibold text-mvindigo">{{ $title }}</h1>
-
+<div class="flex flex-wrap items-center justify-between gap-3 mb-5">
     <div class="flex flex-wrap items-center gap-2">
+        <h1 class="mr-2 text-[28px] font-semibold tracking-tight">{{ $title }}</h1>
+        <a href="{{ route('sessions.index', $prevParams) }}" aria-label="Período anterior"
+           class="flex items-center justify-center size-11 rounded-xl border border-line-strong bg-white hover:bg-canvas transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-[18px]" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 6l-6 6 6 6"/></svg>
+        </a>
+        <a href="{{ route('sessions.index', $nextParams) }}" aria-label="Próximo período"
+           class="flex items-center justify-center size-11 rounded-xl border border-line-strong bg-white hover:bg-canvas transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-[18px]" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6"/></svg>
+        </a>
+        <a href="{{ route('sessions.index', $todayParams) }}"
+           class="inline-flex items-center min-h-11 px-4 rounded-xl border border-line-strong bg-white hover:bg-canvas text-[15px] font-semibold transition-colors">Hoje</a>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2.5">
         {{-- Seletor de visualização --}}
-        <div class="flex items-center rounded-xl bg-white border border-gray-200 p-1 text-sm font-medium">
+        <nav aria-label="Visualização" class="flex gap-1 rounded-[14px] bg-brand-tint p-1">
             @foreach (['day' => 'Dia', 'week' => 'Semana', 'month' => 'Mês'] as $key => $label)
                 @php
                     $params = $key === 'month'
                         ? ['view' => 'month', 'month' => $focus->format('Y-m')]
                         : ['view' => $key, 'date' => $focus->toDateString()];
                 @endphp
-                <a href="{{ route('sessions.index', $params) }}"
-                   class="px-3 py-1.5 rounded-lg transition-colors {{ $view === $key ? 'bg-mvteal text-white shadow-sm' : 'text-gray-600 hover:text-gray-900' }}">
+                <a href="{{ route('sessions.index', $params) }}" @if ($view === $key) aria-current="page" @endif
+                   class="inline-flex items-center min-h-10 px-[18px] rounded-[10px] text-sm font-semibold transition-colors
+                          {{ $view === $key ? 'bg-white text-ink shadow-[0_1px_2px_rgba(28,27,51,0.12)]' : 'text-muted hover:text-ink' }}">
                     {{ $label }}
                 </a>
             @endforeach
-        </div>
-
-        <a href="{{ route('sessions.index', $prevParams) }}"
-           class="px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium">&larr;</a>
-        <a href="{{ route('sessions.index', $todayParams) }}"
-           class="px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium">Hoje</a>
-        <a href="{{ route('sessions.index', $nextParams) }}"
-           class="px-3 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium">&rarr;</a>
+        </nav>
         <a href="{{ route('sessions.create', ['date' => $focus->toDateString()]) }}"
-           class="ml-2 bg-mvteal hover:bg-mvteal-dark text-white px-4 py-2 rounded-lg font-medium">Nova sessão</a>
+           class="inline-flex items-center gap-2 min-h-11 px-[18px] rounded-xl bg-brand hover:bg-brand-dark text-white text-[15px] font-semibold transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-[18px]" aria-hidden="true"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg>
+            Nova sessão
+        </a>
     </div>
 </div>
 
 @if (session('status'))
-    <div class="bg-mvteal-light border border-mvteal/30 text-mvteal-dark rounded-lg px-4 py-3 mb-6">
+    <div role="status" class="rounded-xl border border-accent/20 bg-accent-tint px-4 py-3 mb-5 text-sm font-medium text-accent-ink">
         {{ session('status') }}
     </div>
 @endif
 
-@if ($view === 'month')
-    @include('sessions._month')
-@elseif ($view === 'week')
-    @include('sessions._week')
-@else
+@if ($view === 'day')
     @include('sessions._day')
-@endif
+@else
+    {{-- Mês e semana: clique numa sessão para ver os detalhes ao lado (abaixo, no celular). --}}
+    <div x-data="{ sel: null }" class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px] items-start">
+        <div class="min-w-0 rounded-[18px] border border-line bg-white overflow-x-auto">
+            @if ($view === 'month')
+                @include('sessions._month')
+            @else
+                @include('sessions._week')
+            @endif
+        </div>
 
-<div class="flex flex-wrap gap-4 mt-4 text-xs text-gray-600">
-    <span><span class="inline-block w-3 h-3 rounded bg-mvlilac align-middle mr-1"></span>Agendado</span>
-    <span><span class="inline-block w-3 h-3 rounded bg-mvteal/50 align-middle mr-1"></span>Realizado</span>
-    <span><span class="inline-block w-3 h-3 rounded bg-mvrose align-middle mr-1"></span>Falta não informada (cobrada)</span>
-    <span><span class="inline-block w-3 h-3 rounded bg-amber-300 align-middle mr-1"></span>Falta informada (abonada)</span>
-    <span><span class="inline-block w-3 h-3 rounded bg-gray-200 align-middle mr-1"></span>Cancelado</span>
-    @if ($view !== 'day')
-        <span class="text-gray-400">Dica: clique num dia vazio para agendar, ou arraste uma sessão agendada para outro dia para reagendar.</span>
-    @endif
-</div>
+        <aside x-ref="detalhes" aria-label="Detalhes da sessão" class="scroll-mt-20 rounded-[18px] border border-line bg-white p-6">
+            <p x-show="sel === null" class="text-[15px] leading-relaxed text-muted">
+                Selecione uma sessão para ver os detalhes e registrar a presença.
+            </p>
+            @foreach ($sessions->flatten(1) as $session)
+                <div x-cloak x-show="sel === {{ $session->id }}">
+                    @include('sessions._details', ['session' => $session])
+                </div>
+            @endforeach
+
+            <div class="mt-6 border-t border-line pt-5">
+                <p class="text-[13px] font-medium text-muted">Legenda</p>
+                <ul class="mt-2.5 space-y-2">
+                    @foreach ($legend as $status)
+                        <li class="flex items-center gap-2.5 text-sm">
+                            <span class="size-3.5 rounded {{ $status->badgeClasses() }} ring-1 ring-inset ring-current/30"></span>
+                            {{ $status->label() }}{{ $status === App\Enums\SessionStatus::NoShowUnexcused ? ' (cobrada)' : '' }}{{ $status === App\Enums\SessionStatus::NoShowExcused ? ' (abonada)' : '' }}
+                        </li>
+                    @endforeach
+                </ul>
+                <p class="mt-4 rounded-xl bg-canvas px-3.5 py-3 text-[13px] leading-relaxed text-muted">
+                    Dica: clique num dia vazio para agendar, ou arraste uma sessão agendada para outro dia para reagendar.
+                </p>
+            </div>
+        </aside>
+    </div>
+@endif
 @endsection

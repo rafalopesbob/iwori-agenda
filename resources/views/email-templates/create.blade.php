@@ -3,7 +3,7 @@
 @section('title', 'Novo template — Agenda Iwori')
 
 @section('content')
-<div class="max-w-2xl mx-auto bg-white rounded-2xl shadow p-8"
+<div class="max-w-2xl mx-auto bg-white rounded-2xl border border-line p-6 sm:p-8"
      x-data="{
          insertVariable(name) {
              const el = this.$refs.body;
@@ -14,22 +14,25 @@
              el.selectionStart = el.selectionEnd = start + token.length;
          }
      }">
-    <h1 class="text-2xl font-semibold text-mvindigo mb-1">Personalizar e-mail</h1>
-    <p class="text-sm text-gray-600 mb-6">{{ $type->label() }}</p>
+    <h1 class="text-2xl font-semibold tracking-tight text-ink mb-1">Personalizar e-mail</h1>
+    <p class="text-sm text-muted mb-6">{{ $type->label() }}</p>
 
-    <form method="POST" action="{{ route('email-templates.store') }}" class="space-y-4">
+    <form method="POST" action="{{ route('email-templates.store') }}" class="space-y-5">
         <input type="hidden" name="type" value="{{ $type->value }}">
         @include('email-templates._form')
 
-        <div class="flex items-center gap-3 pt-2">
-            <button type="submit" class="bg-mvteal hover:bg-mvteal-dark text-white font-medium px-5 py-2.5 rounded-lg">
+        <div class="flex flex-wrap items-center gap-3 pt-2">
+            <button type="submit" class="inline-flex items-center justify-center gap-2 min-h-11 px-5 rounded-xl bg-brand hover:bg-brand-dark text-white text-sm font-semibold transition-colors">
                 Salvar template
             </button>
             <button type="submit" formaction="{{ route('email-templates.preview') }}" formtarget="_blank"
-                    class="border border-mvindigo/30 text-mvindigo font-medium px-5 py-2.5 rounded-lg hover:bg-mvsand">
+                    class="inline-flex items-center justify-center gap-2 min-h-11 px-4 rounded-xl border border-line-strong bg-white text-ink hover:bg-canvas text-sm font-semibold transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" class="size-4 shrink-0" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/>
+                </svg>
                 Pré-visualizar
             </button>
-            <a href="{{ route('email-templates.index') }}" class="text-gray-600 hover:underline">Cancelar</a>
+            <a href="{{ route('email-templates.index') }}" class="inline-flex items-center min-h-11 px-2 text-sm font-medium text-muted hover:text-ink">Cancelar</a>
         </div>
     </form>
 </div>

@@ -3,69 +3,62 @@
 @section('title', $client->name . ' — Agenda Iwori')
 
 @section('content')
-<div class="max-w-2xl mx-auto bg-white rounded-2xl shadow p-8">
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-semibold text-mvindigo">{{ $client->name }}</h1>
-        <a href="{{ route('clients.edit', $client) }}" class="text-mvteal-dark hover:underline font-medium">Editar</a>
-    </div>
+@php
+    $cycle = $client->payment_cycle->label();
+    if ($client->payment_cycle === App\Enums\PaymentCycle::Monthly && $client->payment_day) {
+        $cycle .= ' — todo dia '.$client->payment_day;
+    } elseif ($client->payment_cycle === App\Enums\PaymentCycle::Interval && $client->payment_interval_days) {
+        $cycle .= ' — a cada '.$client->payment_interval_days.' dias';
+    }
 
-    <dl class="space-y-4 text-sm">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-                <dt class="text-gray-500">E-mail</dt>
-                <dd class="font-medium">{{ $client->email ?? '—' }}</dd>
-            </div>
-            <div>
-                <dt class="text-gray-500">Telefone</dt>
-                <dd class="font-medium">{{ $client->phone ?? '—' }}</dd>
-            </div>
-            <div>
-                <dt class="text-gray-500">Valor da sessão</dt>
-                <dd class="font-medium">R$ {{ number_format($client->session_value, 2, ',', '.') }}</dd>
-            </div>
-            <div>
-                <dt class="text-gray-500">Situação</dt>
-                <dd class="font-medium">{{ $client->active ? 'Ativo' : 'Inativo' }}</dd>
-            </div>
-            <div>
-                <dt class="text-gray-500">Ciclo de pagamento</dt>
-                <dd class="font-medium">
-                    {{ $client->payment_cycle->label() }}
-                    @if ($client->payment_cycle === App\Enums\PaymentCycle::Monthly && $client->payment_day)
-                        — todo dia {{ $client->payment_day }}
-                    @elseif ($client->payment_cycle === App\Enums\PaymentCycle::Interval && $client->payment_interval_days)
-                        — a cada {{ $client->payment_interval_days }} dias
-                    @endif
-                </dd>
-            </div>
-            <div>
-                <dt class="text-gray-500">Canal de cobrança</dt>
-                <dd class="font-medium">{{ $client->billing_channel->label() }}</dd>
-            </div>
-            <div>
-                <dt class="text-gray-500">Última cobrança</dt>
-                <dd class="font-medium">{{ $client->last_charged_at?->format('d/m/Y') ?? 'Nunca cobrado' }}</dd>
-            </div>
-            <div>
-                <dt class="text-gray-500">Cobrança por WhatsApp</dt>
-                <dd class="font-medium">{{ $client->whatsapp_opt_in_at ? 'Autorizada em '.$client->whatsapp_opt_in_at->format('d/m/Y') : 'Não autorizada' }}</dd>
-            </div>
+    $details = [
+        'E-mail' => $client->email ?? '—',
+        'Telefone' => $client->phone ?? '—',
+        'Valor da sessão' => 'R$ '.number_format($client->session_value, 2, ',', '.'),
+        'Ciclo de pagamento' => $cycle,
+        'Canal de cobrança' => $client->billing_channel->label(),
+        'Última cobrança' => $client->last_charged_at?->format('d/m/Y') ?? 'Nunca cobrado',
+        'Cobrança por WhatsApp' => $client->whatsapp_opt_in_at ? 'Autorizada em '.$client->whatsapp_opt_in_at->format('d/m/Y') : 'Não autorizada',
+    ];
+@endphp
+
+<div class="max-w-3xl mx-auto">
+    <a href="{{ route('clients.index') }}" class="inline-flex items-center gap-1.5 min-h-11 text-sm font-medium text-muted hover:text-ink">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-4" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 6l-6 6 6 6"/></svg>
+        Voltar para a lista
+    </a>
+
+    <div class="mt-2 mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-3">
+            <h1 class="text-3xl font-semibold tracking-tight">{{ $client->name }}</h1>
+            <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $client->active ? 'bg-accent-tint text-accent-ink' : 'bg-neutral-tint text-muted' }}">
+                {{ $client->active ? 'Ativo' : 'Inativo' }}
+            </span>
         </div>
-
-        @if ($client->notes)
-            <div>
-                <dt class="text-gray-500">Anotações</dt>
-                <dd class="font-medium whitespace-pre-line">{{ $client->notes }}</dd>
-            </div>
-        @endif
-    </dl>
-
-    <div class="mt-8 pt-6 border-t border-gray-100 text-sm text-gray-500">
-        Em breve: histórico de sessões e faturamento do cliente.
+        <a href="{{ route('clients.edit', $client) }}"
+           class="inline-flex items-center gap-2 min-h-11 px-4 rounded-xl border border-line-strong bg-white hover:bg-canvas text-sm font-semibold transition-colors">Editar</a>
     </div>
 
-    <div class="mt-6">
-        <a href="{{ route('clients.index') }}" class="text-gray-600 hover:underline">&larr; Voltar para a lista</a>
+    <div class="rounded-2xl border border-line bg-white p-6 sm:p-8">
+        <dl class="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
+            @foreach ($details as $term => $value)
+                <div>
+                    <dt class="text-[13px] text-muted">{{ $term }}</dt>
+                    <dd class="mt-1 text-[15px] font-medium">{{ $value }}</dd>
+                </div>
+            @endforeach
+
+            @if ($client->notes)
+                <div class="sm:col-span-2">
+                    <dt class="text-[13px] text-muted">Anotações</dt>
+                    <dd class="mt-1 text-[15px] whitespace-pre-line">{{ $client->notes }}</dd>
+                </div>
+            @endif
+        </dl>
+
+        <p class="mt-8 rounded-xl bg-canvas px-4 py-3 text-sm text-muted">
+            Em breve: histórico de sessões e faturamento do cliente.
+        </p>
     </div>
 </div>
 @endsection

@@ -4,25 +4,25 @@
 
 @section('content')
 <div class="max-w-2xl mx-auto space-y-4">
-    <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-semibold text-mvindigo">Pré-visualização</h1>
-        <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-mvrose-light text-mvrose-dark">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <h1 class="text-2xl font-semibold tracking-tight text-ink">Pré-visualização</h1>
+        <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-warn-tint text-warn-ink">
             Dados de exemplo
         </span>
     </div>
 
-    <p class="text-sm text-gray-600">{{ $type->label() }}</p>
+    <p class="text-sm text-muted">{{ $type->label() }}</p>
 
-    <div class="bg-white rounded-2xl shadow overflow-hidden">
-        <div class="border-b border-gray-100 px-6 py-4">
-            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Assunto</p>
-            <p class="font-medium text-gray-800">{{ $subject }}</p>
+    <div class="bg-white rounded-2xl border border-line overflow-hidden">
+        <div class="border-b border-line px-6 py-4">
+            <p class="text-xs font-medium text-muted uppercase tracking-wide mb-1">Assunto</p>
+            <p class="font-medium text-ink">{{ $subject }}</p>
         </div>
         <div class="px-6 py-6">
-            <p class="text-xs text-gray-400 uppercase tracking-wide mb-3">Corpo</p>
-            <div class="text-gray-800 leading-relaxed whitespace-pre-line">{{ $body }}</div>
+            <p class="text-xs font-medium text-muted uppercase tracking-wide mb-3">Corpo</p>
+            <div class="text-ink leading-relaxed whitespace-pre-line">{{ $body }}</div>
 
-            <div class="mt-6 border border-dashed border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-400">
+            <div class="mt-6 rounded-xl border border-dashed border-line-strong bg-canvas px-4 py-3 text-sm text-muted">
                 Os detalhes automáticos (tabela de sessões, totais ou dados da sessão)
                 aparecem aqui no e-mail real.
             </div>

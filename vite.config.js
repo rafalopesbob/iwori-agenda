@@ -9,14 +9,9 @@ export default defineConfig({
             input: ['resources/css/app.css', 'resources/js/app.js'],
             refresh: true,
             fonts: [
-                bunny('Instrument Sans', {
-                    weights: [400, 500, 600],
-                }),
-                // Serifa humanista para títulos — dá calor e caráter editorial,
-                // distinguindo de SaaS genéricos que só usam sans.
-                bunny('Fraunces', {
+                // Sem serifa geométrica e neutra, com números tabulares para a agenda e os valores.
+                bunny('Geist', {
                     weights: [400, 500, 600, 700],
-                    styles: ['normal', 'italic'],
                 }),
             ],
         }),

@@ -26,9 +26,9 @@ enum ChargeStatus: string
     public function badgeClasses(): string
     {
         return match ($this) {
-            self::Pending => 'bg-mvrose-light text-mvrose-dark',
-            self::Paid => 'bg-mvteal-light text-mvteal-dark',
-            self::Canceled => 'bg-gray-100 text-gray-500',
+            self::Pending => 'bg-brand-tint text-brand',
+            self::Paid => 'bg-accent-tint text-accent-ink',
+            self::Canceled => 'bg-neutral-tint text-muted',
         };
     }
 }

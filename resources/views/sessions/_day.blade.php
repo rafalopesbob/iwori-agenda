@@ -1,74 +1,65 @@
-{{-- Visualização diária: lista detalhada das sessões do dia. --}}
+{{-- Visualização diária: lista detalhada das sessões do dia, com as ações à mão. --}}
 @php $daySessions = $sessions->get($day->toDateString(), collect()); @endphp
 
-<div class="bg-white rounded-2xl shadow overflow-hidden">
+<div class="rounded-[18px] border border-line bg-white">
     @if ($daySessions->isEmpty())
-        <div class="p-10 text-center text-gray-500">
-            <p class="mb-4">Nenhuma sessão neste dia.</p>
+        <div class="px-6 py-14 text-center">
+            <p class="text-muted">Nenhuma sessão neste dia.</p>
             <a href="{{ route('sessions.create', ['date' => $day->toDateString()]) }}"
-               class="bg-mvteal hover:bg-mvteal-dark text-white px-4 py-2 rounded-lg font-medium">
+               class="mt-5 inline-flex items-center gap-2 min-h-11 px-[18px] rounded-xl bg-brand hover:bg-brand-dark text-white text-[15px] font-semibold transition-colors">
                 Agendar neste dia
             </a>
         </div>
     @else
-        <ul class="divide-y divide-gray-100">
+        <ul class="divide-y divide-line">
             @foreach ($daySessions as $session)
-                <li class="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
-                    <div class="flex items-center gap-4 min-w-0">
-                        <span class="text-lg font-semibold text-mvindigo tabular-nums shrink-0">
-                            {{ $session->scheduled_at->format('H:i') }}
-                        </span>
-                        <div class="min-w-0">
-                            <p class="font-medium text-gray-800 truncate">
-                                {{ $session->client->name }}
-                                @if ($session->isRecurring())
-                                    <span title="Faz parte de uma série recorrente">🔁</span>
-                                @endif
-                            </p>
-                            <p class="text-sm text-gray-500">
-                                {{ $session->duration_minutes }} min — R$ {{ number_format($session->value, 2, ',', '.') }}
-                            </p>
-                        </div>
-                        <span class="text-xs font-medium px-2 py-1 rounded-full shrink-0 {{ $session->status->badgeClasses() }}">
-                            {{ $session->status->label() }}
-                        </span>
+                <li class="flex flex-wrap items-center gap-x-5 gap-y-3 px-6 py-4">
+                    <span class="w-14 text-lg font-semibold tabular-nums">{{ $session->scheduled_at->format('H:i') }}</span>
+                    <div class="min-w-0 flex-1 basis-48">
+                        <p class="flex items-center gap-1.5 truncate text-[15px] font-semibold">
+                            {{ $session->client->name }}
+                            @if ($session->isRecurring())
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-3.5 shrink-0 text-muted" aria-label="Série recorrente" role="img"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+                            @endif
+                        </p>
+                        <p class="mt-0.5 text-[13px] text-muted">
+                            {{ $session->duration_minutes }} min · R$ {{ number_format($session->value, 2, ',', '.') }}
+                        </p>
                     </div>
+                    <span class="rounded-full px-3 py-1.5 text-[13px] font-semibold {{ $session->status->badgeClasses() }}">{{ $session->status->label() }}</span>
 
-                    <div class="flex flex-wrap gap-2">
+                    <div class="flex w-full flex-wrap gap-1.5 lg:w-auto">
                         @if ($session->status === App\Enums\SessionStatus::Scheduled)
+                            @foreach ([
+                                ['completed', 'Realizada', 'Marcar como realizada', 'border-accent text-accent-ink hover:bg-accent-tint'],
+                                ['no_show', 'Falta s/ aviso', 'Falta não informada (cobrada)', 'border-line-strong text-danger-ink hover:bg-danger-tint'],
+                                ['no_show_excused', 'Falta c/ aviso', 'Falta informada (abonada)', 'border-line-strong text-warn-ink hover:bg-warn-tint'],
+                                ['canceled', 'Cancelar', 'Cancelar sessão', 'border-line-strong text-muted hover:bg-canvas hover:text-ink'],
+                            ] as [$status, $label, $title, $tone])
+                                <form method="POST" action="{{ route('sessions.status', $session) }}">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="{{ $status }}">
+                                    <button type="submit" title="{{ $title }}"
+                                            class="min-h-11 px-3.5 rounded-[10px] border bg-white text-[13px] font-semibold transition-colors {{ $tone }}">{{ $label }}</button>
+                                </form>
+                            @endforeach
+                        @elseif ($session->status !== App\Enums\SessionStatus::Canceled)
                             <form method="POST" action="{{ route('sessions.status', $session) }}">
                                 @csrf
                                 @method('PATCH')
-                                <input type="hidden" name="status" value="completed">
-                                <button type="submit" class="text-xs bg-mvteal hover:bg-mvteal-dark text-white px-3 py-2 rounded-lg font-medium">✓ Realizado</button>
-                            </form>
-                            <form method="POST" action="{{ route('sessions.status', $session) }}">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="status" value="no_show">
-                                <button type="submit" title="Cobrada" class="text-xs bg-mvrose-dark hover:bg-mvrose text-white px-3 py-2 rounded-lg font-medium">✗ Falta (não avisou)</button>
-                            </form>
-                            <form method="POST" action="{{ route('sessions.status', $session) }}">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="status" value="no_show_excused">
-                                <button type="submit" title="Abonada" class="text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-lg font-medium">Falta (avisou)</button>
-                            </form>
-                            <form method="POST" action="{{ route('sessions.status', $session) }}">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="status" value="canceled">
-                                <button type="submit" class="text-xs bg-gray-400 hover:bg-gray-500 text-white px-3 py-2 rounded-lg font-medium">– Cancelar</button>
+                                <input type="hidden" name="status" value="scheduled">
+                                <button type="submit" class="min-h-11 px-3 text-[13px] font-medium text-muted underline hover:text-ink">Voltar para agendada</button>
                             </form>
                         @endif
 
                         @if ($session->status !== App\Enums\SessionStatus::Canceled)
                             <a href="{{ route('sessions.edit', $session) }}"
-                               class="text-xs bg-mvindigo-light hover:bg-mvindigo text-white px-3 py-2 rounded-lg font-medium">✎ Editar</a>
+                               class="inline-flex items-center min-h-11 px-3.5 rounded-[10px] border border-line-strong bg-white hover:bg-canvas text-[13px] font-semibold transition-colors">Editar</a>
                             <form method="POST" action="{{ route('sessions.charge', $session) }}">
                                 @csrf
                                 <button type="submit" title="Enviar cobrança ({{ $session->client->billing_channel->label() }})"
-                                        class="text-xs bg-mvsand-dark hover:bg-mvlilac text-mvindigo px-3 py-2 rounded-lg font-medium">$ Cobrar</button>
+                                        class="min-h-11 px-3.5 rounded-[10px] border border-line-strong bg-white hover:bg-canvas text-[13px] font-semibold transition-colors">Cobrar</button>
                             </form>
                         @endif
                     </div>
