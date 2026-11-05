@@ -21,7 +21,7 @@ Nenhum dos três pede cartão de crédito no cadastro.
   - `compose.prod.yaml`: produção self-hosted (app + fila + agendador + MySQL).
 - **Banco:** **MySQL**. O `.env.example` cai em SQLite por padrão, mas o projeto **depende de MySQL**: a migration `2026_07_08_100001_add_excused_no_show_to_client_sessions_table.php` usa `ALTER TABLE … MODIFY COLUMN … ENUM`, que não existe em PostgreSQL nem em SQLite. Por isso o banco na nuvem é MySQL (Aiven), e não o Postgres gratuito do Render, Neon ou Supabase.
 - **Fila:** driver `database`. Os jobs enviam e-mails de agendamento e cobrança, cobranças por WhatsApp e sincronização com o Google Calendar. **Precisa de um worker rodando.**
-- **Agendador:** `charges:dispatch` roda diariamente às **08:00 UTC** (05:00 em Brasília), porque `config/app.php` fixa `timezone => UTC`.
+- **Agendador:** `charges:dispatch` roda diariamente às **09:00 de Brasília** (`America/Sao_Paulo`, 12:00 UTC). O app em si roda em UTC (`config/app.php`).
 - **Arquivos enviados:** fotos de perfil ficam no disco `public` e comprovantes de pagamento no disco `local`, ambos no filesystem do contêiner (veja as [limitações](#7-limitações-do-plano-gratuito)).
 - **Integrações opcionais:** Google Calendar (OAuth 2.0, callback em `/google/callback`) e WhatsApp Cloud API (Meta).
 - **Health check:** `GET /up`, a rota nativa do Laravel.
@@ -80,6 +80,7 @@ Já definidas no `render.yaml` (não precisa mexer):
 |---|---|
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Sincronização com o Google Calendar |
 | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID`, `WHATSAPP_TEMPLATE_CHARGE` | Cobrança por WhatsApp (template padrão `cobranca_iwori`) |
+| `WHATSAPP_API_VERSION` | Versão da Graph API da Meta (padrão `v25.0`). Troque quando a Meta anunciar o fim da versão em uso. |
 
 > ⚠️ **O `APP_KEY` de produção nunca pode mudar.** As anotações de clientes, sessões e cobranças e os tokens do Google são gravados criptografados com ele. Trocar a chave deixa esses dados ilegíveis. Guarde-a num gerenciador de senhas e não reutilize a chave local.
 
@@ -157,16 +158,16 @@ git push origin main
 ### 4.6 Integrações (opcional)
 
 - **Google Calendar:** no Google Cloud Console → *Credentials* → seu OAuth client → **Authorized redirect URIs**, adicione `https://<sua-url>.onrender.com/google/callback`. Depois, coloque `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` no Render.
-- **WhatsApp:** adicione `WHATSAPP_TOKEN` e `WHATSAPP_PHONE_ID` (o template padrão é `cobranca_iwori`).
+- **WhatsApp:** adicione `WHATSAPP_TOKEN` e `WHATSAPP_PHONE_ID` (o template padrão é `cobranca_iwori`). Só recebem por WhatsApp os clientes com celular válido e autorização marcada no cadastro. Se a Meta falhar, a mensagem é refeita sozinha até 3 vezes, sem reenviar o e-mail.
 
 ### 4.7 Acordar o app para a cobrança diária
 
-No plano Free, o serviço **dorme após 15 minutos sem acessos** e, dormindo, o agendador não roda. Para a cobrança das 08:00 UTC acontecer, crie um despertador gratuito no [cron-job.org](https://cron-job.org):
+No plano Free, o serviço **dorme após 15 minutos sem acessos** e, dormindo, o agendador não roda. Para a cobrança das 09:00 de Brasília acontecer, crie um despertador gratuito no [cron-job.org](https://cron-job.org):
 
 - URL: `https://<sua-url>.onrender.com/up`
-- Agendamento: todo dia às **04:50 (America/Sao_Paulo)**, ou seja, 07:50 UTC
+- Agendamento: todo dia às **08:50 (America/Sao_Paulo)**, ou seja, 11:50 UTC
 
-O app acorda em cerca de 1 minuto e roda `charges:dispatch` às 08:00. A fila envia as cobranças antes de ele dormir de novo.
+O app acorda em cerca de 1 minuto e roda `charges:dispatch` às 09:00. A fila envia as cobranças antes de ele dormir de novo.
 
 ## 5. Ambiente local x nuvem
 
@@ -203,7 +204,7 @@ Para testar o banco do Aiven a partir da sua máquina, sem mexer no `.env` do di
 - **750 horas/mês** por workspace no Render. Um serviço ligado o mês inteiro usa cerca de 744.
 - **Banco de 1 GB** no Aiven Free. O Aiven pode desligar serviços sem uso por muito tempo.
 - **Memória de 512 MB** para Apache + fila + agendador no mesmo contêiner.
-- **Horário da cobrança:** 08:00 UTC = 05:00 em Brasília. Para mudar, ajuste o `dailyAt` em `bootstrap/app.php` (ex.: `->dailyAt('08:00')->timezone('America/Sao_Paulo')`).
+- **Horário da cobrança:** 09:00 de Brasília. Para mudar, ajuste o `dailyAt` em `bootstrap/app.php` e o despertador do cron-job.org (10 minutos antes).
 
 ### Solução de problemas
 

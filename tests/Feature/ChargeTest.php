@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Jobs\SendClientCharge;
 use App\Jobs\SendSessionCharge;
+use App\Jobs\SendWhatsappMessage;
 use App\Mail\ClientChargeMail;
 use App\Models\Client;
 use App\Models\ClientSession;
@@ -11,7 +12,9 @@ use App\Models\User;
 use App\Services\BillingService;
 use App\Services\WhatsAppService;
 use Carbon\CarbonImmutable;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
@@ -230,6 +233,88 @@ class ChargeTest extends TestCase
         $this->assertNotNull($client->fresh()->last_charged_at);
     }
 
+    public function test_whatsapp_sem_autorizacao_do_cliente_nao_envia(): void
+    {
+        $this->withWhatsappConfigured();
+        Mail::fake();
+        Http::fake();
+
+        $client = Client::factory()->channelWhatsapp()->withoutWhatsappOptIn()->create(['phone' => '(11) 98765-4321']);
+        ClientSession::factory()->for($client)->completed()->create([
+            'scheduled_at' => now()->subDays(3), 'value' => 180,
+        ]);
+
+        (new SendClientCharge($client))->handle(app(BillingService::class), app(WhatsAppService::class));
+
+        Http::assertNothingSent();
+        // O período fecha mesmo assim: a cobrança fica registrada para envio manual.
+        $this->assertNotNull($client->fresh()->last_charged_at);
+    }
+
+    public function test_falha_no_whatsapp_nao_reenvia_o_email(): void
+    {
+        $this->withWhatsappConfigured();
+        Mail::fake();
+        Queue::fake();
+
+        $client = Client::factory()->channelBoth()->create([
+            'email' => 'cliente@teste.com',
+            'phone' => '(11) 98765-4321',
+        ]);
+        ClientSession::factory()->for($client)->completed()->create([
+            'scheduled_at' => now()->subDays(3), 'value' => 180,
+        ]);
+
+        (new SendClientCharge($client))->handle(app(BillingService::class), app(WhatsAppService::class));
+
+        Mail::assertQueuedCount(1);
+        Queue::assertPushed(SendWhatsappMessage::class, fn (SendWhatsappMessage $job) => $job->to === '5511987654321'
+            && $job->template === 'cobranca_iwori');
+
+        // A Meta falha: só o job do WhatsApp quebra (e a fila o refaz), o e-mail não sai de novo.
+        Http::fake(['graph.facebook.com/*' => Http::response(['error' => ['message' => 'indisponível']], 500)]);
+        $job = Queue::pushed(SendWhatsappMessage::class)->first();
+
+        try {
+            $job->handle(app(WhatsAppService::class));
+            $this->fail('A falha da Cloud API deveria lançar exceção para a fila tentar de novo.');
+        } catch (RequestException) {
+            // Esperado.
+        }
+
+        Mail::assertQueuedCount(1);
+        $this->assertSame(3, $job->tries);
+        $this->assertSame([60, 300, 900], $job->backoff);
+    }
+
+    public function test_versao_da_graph_api_vem_da_configuracao(): void
+    {
+        $this->withWhatsappConfigured();
+        config(['services.whatsapp.api_version' => 'v99.0']);
+        Http::fake(['graph.facebook.com/*' => Http::response([])]);
+
+        (new SendWhatsappMessage('5511987654321', 'cobranca_iwori', ['Ana', 'R$ 180,00', 'out/2026']))
+            ->handle(app(WhatsAppService::class));
+
+        Http::assertSent(fn ($request) => str_starts_with($request->url(), 'https://graph.facebook.com/v99.0/123456789/messages'));
+    }
+
+    public function test_cobranca_avulsa_por_whatsapp_usa_o_job_proprio(): void
+    {
+        $this->withWhatsappConfigured();
+        Mail::fake();
+        Queue::fake();
+
+        $client = Client::factory()->channelWhatsapp()->create(['phone' => '(21) 99876-5432']);
+        $session = ClientSession::factory()->for($client)->completed()->create(['value' => 175]);
+
+        (new SendSessionCharge($session))->handle(app(WhatsAppService::class));
+
+        Mail::assertNotQueued(ClientChargeMail::class);
+        Queue::assertPushed(SendWhatsappMessage::class, fn (SendWhatsappMessage $job) => $job->to === '5521998765432'
+            && $job->params[1] === 'R$ 175,00');
+    }
+
     public function test_periodo_sem_valor_nao_envia_nada(): void
     {
         Mail::fake();
@@ -279,6 +364,18 @@ class ChargeTest extends TestCase
             ->assertSuccessful();
 
         Queue::assertPushed(SendClientCharge::class, 2);
+    }
+
+    public function test_cobranca_diaria_roda_as_9h_de_brasilia(): void
+    {
+        // As tarefas agendadas são registradas quando o console inicia.
+        $this->artisan('schedule:list')->assertSuccessful();
+
+        $event = collect(app(Schedule::class)->events())
+            ->first(fn ($event) => str_contains((string) $event->command, 'charges:dispatch'));
+
+        $this->assertSame('0 9 * * *', $event->expression);
+        $this->assertSame('America/Sao_Paulo', $event->timezone);
     }
 
     // ── Botões manuais ───────────────────────────────────────────────

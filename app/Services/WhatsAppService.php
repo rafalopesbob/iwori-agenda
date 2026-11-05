@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Http;
  */
 class WhatsAppService
 {
-    protected const GRAPH_URL = 'https://graph.facebook.com/v21.0';
+    protected const GRAPH_URL = 'https://graph.facebook.com';
 
     /**
      * Credenciais da Cloud API configuradas no ambiente?
@@ -38,7 +38,7 @@ class WhatsAppService
         }
 
         Http::withToken(config('services.whatsapp.token'))
-            ->post(self::GRAPH_URL.'/'.config('services.whatsapp.phone_number_id').'/messages', [
+            ->post(self::GRAPH_URL.'/'.config('services.whatsapp.api_version').'/'.config('services.whatsapp.phone_number_id').'/messages', [
                 'messaging_product' => 'whatsapp',
                 'to' => $to,
                 'type' => 'template',

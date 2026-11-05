@@ -41,7 +41,10 @@ class ClientController extends Controller
      */
     public function store(StoreClientRequest $request): RedirectResponse
     {
-        $request->user()->clients()->create($request->validated());
+        $request->user()->clients()
+            ->make($request->safe()->except('whatsapp_opt_in'))
+            ->setWhatsappOptIn($request->boolean('whatsapp_opt_in'))
+            ->save();
 
         return redirect()->route('clients.index')
             ->with('status', 'Cliente cadastrado com sucesso.');
@@ -72,7 +75,9 @@ class ClientController extends Controller
      */
     public function update(UpdateClientRequest $request, Client $client): RedirectResponse
     {
-        $client->update($request->validated());
+        $client->fill($request->safe()->except('whatsapp_opt_in'))
+            ->setWhatsappOptIn($request->boolean('whatsapp_opt_in'))
+            ->save();
 
         return redirect()->route('clients.index')
             ->with('status', 'Cliente atualizado com sucesso.');

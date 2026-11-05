@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 // user_id fica fora do Fillable de propósito: o vínculo com o profissional
 // deve ser feito via relacionamento ($user->clients()->create(...)), nunca
-// vindo do request.
+// vindo do request. whatsapp_opt_in_at idem: só via setWhatsappOptIn().
 #[Fillable(['name', 'email', 'phone', 'session_value', 'notes', 'active', 'payment_cycle', 'payment_day', 'payment_interval_days', 'billing_channel'])]
 class Client extends Model
 {
@@ -36,6 +36,7 @@ class Client extends Model
             'payment_cycle' => PaymentCycle::class,
             'billing_channel' => BillingChannel::class,
             'last_charged_at' => 'datetime',
+            'whatsapp_opt_in_at' => 'datetime',
         ];
     }
 
@@ -119,6 +120,25 @@ class Client extends Model
         return str_starts_with($digits, '55') && strlen($digits) >= 12
             ? $digits
             : '55'.$digits;
+    }
+
+    /**
+     * Cobrança por WhatsApp liberada: o cliente autorizou e tem número.
+     */
+    public function canReceiveWhatsapp(): bool
+    {
+        return $this->whatsapp_opt_in_at !== null && $this->whatsappNumber() !== null;
+    }
+
+    /**
+     * Registra ou revoga a autorização para cobranças por WhatsApp,
+     * preservando a data original enquanto ela continuar valendo.
+     */
+    public function setWhatsappOptIn(bool $granted): static
+    {
+        return $this->forceFill([
+            'whatsapp_opt_in_at' => $granted ? ($this->whatsapp_opt_in_at ?? now()) : null,
+        ]);
     }
 
     /**

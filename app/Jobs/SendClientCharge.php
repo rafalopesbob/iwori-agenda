@@ -80,8 +80,8 @@ class SendClientCharge implements ShouldQueue
                 );
             }
 
-            if ($channel->sendsWhatsapp() && $whatsapp->isConfigured() && ($to = $client->whatsappNumber())) {
-                $whatsapp->sendTemplate($to, config('services.whatsapp.template_charge'), [
+            if ($channel->sendsWhatsapp() && $whatsapp->isConfigured() && $client->canReceiveWhatsapp()) {
+                SendWhatsappMessage::dispatch($client->whatsappNumber(), config('services.whatsapp.template_charge'), [
                     $client->name,
                     'R$ '.number_format($charge['total'], 2, ',', '.'),
                     $start->format('d/m/Y').' a '.$end->format('d/m/Y'),

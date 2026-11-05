@@ -66,8 +66,8 @@ class SendSessionCharge implements ShouldQueue
             ));
         }
 
-        if ($channel->sendsWhatsapp() && $whatsapp->isConfigured() && ($to = $client->whatsappNumber())) {
-            $whatsapp->sendTemplate($to, config('services.whatsapp.template_charge'), [
+        if ($channel->sendsWhatsapp() && $whatsapp->isConfigured() && $client->canReceiveWhatsapp()) {
+            SendWhatsappMessage::dispatch($client->whatsappNumber(), config('services.whatsapp.template_charge'), [
                 $client->name,
                 'R$ '.number_format((float) $session->value, 2, ',', '.'),
                 $session->scheduled_at->format('d/m/Y \à\s H:i'),

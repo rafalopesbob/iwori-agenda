@@ -13,8 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withSchedule(function (Schedule $schedule): void {
-        // Cobranças dos ciclos de pagamento que vencem no dia.
-        $schedule->command('charges:dispatch')->dailyAt('08:00');
+        // Cobranças dos ciclos de pagamento que vencem no dia, em horário
+        // comercial de Brasília (o app roda em UTC).
+        $schedule->command('charges:dispatch')->dailyAt('09:00')->timezone('America/Sao_Paulo');
     })
     ->withMiddleware(function (Middleware $middleware): void {
         // Na nuvem (ex.: Render) o app fica atrás de um load balancer: confiar nos

@@ -44,6 +44,9 @@ return [
         'token' => env('WHATSAPP_TOKEN'),
         'phone_number_id' => env('WHATSAPP_PHONE_ID'),
         'template_charge' => env('WHATSAPP_TEMPLATE_CHARGE', 'cobranca_iwori'),
+        // A Meta desliga cada versão da Graph API cerca de dois anos depois
+        // da seguinte: atualize aqui quando ela anunciar o fim da versão em uso.
+        'api_version' => env('WHATSAPP_API_VERSION', 'v25.0'),
     ],
 
 ];

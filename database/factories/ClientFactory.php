@@ -70,22 +70,34 @@ class ClientFactory extends Factory
     }
 
     /**
-     * Cobrança via WhatsApp.
+     * Cobrança via WhatsApp, com a autorização do cliente registrada.
      */
     public function channelWhatsapp(): static
     {
         return $this->state(fn (array $attributes) => [
             'billing_channel' => BillingChannel::Whatsapp,
+            'whatsapp_opt_in_at' => now(),
         ]);
     }
 
     /**
-     * Cobrança por e-mail e WhatsApp.
+     * Cobrança por e-mail e WhatsApp, com a autorização do cliente registrada.
      */
     public function channelBoth(): static
     {
         return $this->state(fn (array $attributes) => [
             'billing_channel' => BillingChannel::Both,
+            'whatsapp_opt_in_at' => now(),
+        ]);
+    }
+
+    /**
+     * Cliente que não autorizou cobranças por WhatsApp.
+     */
+    public function withoutWhatsappOptIn(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'whatsapp_opt_in_at' => null,
         ]);
     }
 }

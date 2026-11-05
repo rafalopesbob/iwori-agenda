@@ -77,6 +77,19 @@
         </div>
     </div>
 
+    <div>
+        <label class="flex items-center gap-2 text-sm">
+            <input type="hidden" name="whatsapp_opt_in" value="0">
+            <input type="checkbox" name="whatsapp_opt_in" value="1"
+                   @checked(old('whatsapp_opt_in', ($client->whatsapp_opt_in_at ?? null) !== null))
+                   class="rounded border-gray-300 text-mvteal">
+            O cliente autorizou receber cobranças por WhatsApp
+        </label>
+        @error('whatsapp_opt_in')
+            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+        @enderror
+    </div>
+
     {{-- As transições abrem/fecham como uma peça se encaixando: escala a
          partir do topo, sem movimento brusco. --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -46,6 +46,10 @@
                 <dt class="text-gray-500">Última cobrança</dt>
                 <dd class="font-medium">{{ $client->last_charged_at?->format('d/m/Y') ?? 'Nunca cobrado' }}</dd>
             </div>
+            <div>
+                <dt class="text-gray-500">Cobrança por WhatsApp</dt>
+                <dd class="font-medium">{{ $client->whatsapp_opt_in_at ? 'Autorizada em '.$client->whatsapp_opt_in_at->format('d/m/Y') : 'Não autorizada' }}</dd>
+            </div>
         </div>
 
         @if ($client->notes)
