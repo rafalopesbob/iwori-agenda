@@ -5,7 +5,8 @@ services:
     name: iwori-agenda
     runtime: docker
     plan: free
-    # Escolha a região mais próxima do banco no Aiven; não dá para mudar depois.
+    # Mesma região do banco no TiDB Cloud (AWS us-east-1, N. Virginia);
+    # não dá para mudar depois.
     region: virginia
     dockerfilePath: ./Dockerfile
     healthCheckPath: /up
@@ -32,22 +33,23 @@ services:
       - key: RUN_WORKERS
         value: "1"
 
-      # ── Banco: Aiven for MySQL (plano Free) ─────────────────────
+      # ── Banco: TiDB Cloud Starter (compatível com MySQL, grátis) ─
       - key: DB_CONNECTION
         value: mysql
-      - key: DB_HOST
+      - key: DB_HOST # ex.: gateway01.us-east-1.prod.aws.tidbcloud.com
         sync: false
       - key: DB_PORT
-        sync: false
+        value: "4000"
       - key: DB_DATABASE
-        value: defaultdb
-      - key: DB_USERNAME
-        value: avnadmin
+        value: iwori_agenda
+      - key: DB_USERNAME # com o prefixo da instância, ex.: 2abc123.root
+        sync: false
       - key: DB_PASSWORD
         sync: false
-      # Secret file "aiven-ca.pem" adicionado no painel do Render.
+      # O TiDB Cloud exige TLS com certificado público: basta o pacote de
+      # CAs do sistema, sem secret file.
       - key: MYSQL_ATTR_SSL_CA
-        value: /etc/secrets/aiven-ca.pem
+        value: /etc/ssl/certs/ca-certificates.crt
 
       # ── Sessão, cache e fila ────────────────────────────────────
       - key: SESSION_DRIVER
@@ -125,22 +127,22 @@ services:
       - key: RUN_WORKERS
         value: "1"
 
-      # Banco separado da produção: database e usuário próprios no Aiven,
-      # com acesso só ao database da demo (nunca o avnadmin).
+      # Banco separado da produção: uma instância própria no TiDB Cloud
+      # (o plano grátis permite até 5), com usuário e senha próprios.
       - key: DB_CONNECTION
         value: mysql
       - key: DB_HOST
         sync: false
       - key: DB_PORT
-        sync: false
+        value: "4000"
       - key: DB_DATABASE
         value: iwori_demo
-      - key: DB_USERNAME
-        value: iwori_demo
+      - key: DB_USERNAME # usuário da instância DA DEMO, ex.: 3def456.root
+        sync: false
       - key: DB_PASSWORD
         sync: false
       - key: MYSQL_ATTR_SSL_CA
-        value: /etc/secrets/aiven-ca.pem
+        value: /etc/ssl/certs/ca-certificates.crt
 
       - key: SESSION_DRIVER
         value: database

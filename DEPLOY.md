@@ -5,11 +5,11 @@ Guia para publicar o Iwori Agenda na nuvem sem custo, usando:
 | Peça | Serviço | Plano |
 |---|---|---|
 | App (web + fila + agendador) | [Render](https://render.com) — web service Docker | Free |
-| Banco MySQL 8 | [Aiven for MySQL](https://aiven.io/mysql) | Free (1 GB) |
+| Banco compatível com MySQL | [TiDB Cloud Starter](https://www.pingcap.com/tidb-cloud-starter/) | Free (5 GiB e 50 milhões de RUs/mês por instância, até 5 instâncias) |
 | E-mail transacional | [Brevo](https://www.brevo.com) — SMTP relay | Free (300 e-mails/dia) |
 | Fotos de perfil e comprovantes | [Cloudflare R2](https://www.cloudflare.com/developer-platform/products/r2/) — bucket privado | Free (10 GB) |
 
-Render, Aiven e Brevo não pedem cartão de crédito no cadastro. O Cloudflare pede uma forma de pagamento para ativar o R2, mesmo no plano grátis; só cobra o que passar do limite gratuito.
+Render, TiDB Cloud e Brevo não pedem cartão de crédito no cadastro. O Cloudflare pede uma forma de pagamento para ativar o R2, mesmo no plano grátis; só cobra o que passar do limite gratuito.
 
 ---
 
@@ -20,7 +20,9 @@ Render, Aiven e Brevo não pedem cartão de crédito no cadastro. O Cloudflare p
   - `Dockerfile`: imagem de produção em 3 estágios (Node → Composer → PHP 8.4 + Apache).
   - `compose.yaml`: desenvolvimento local com Sail (PHP 8.5 + MySQL 8.4 + Mailpit).
   - `compose.prod.yaml`: produção self-hosted (app + fila + agendador + MySQL).
-- **Banco:** **MySQL**. O `.env.example` cai em SQLite por padrão, mas o projeto **depende de MySQL**: a migration `2026_07_08_100001_add_excused_no_show_to_client_sessions_table.php` usa `ALTER TABLE … MODIFY COLUMN … ENUM`, que não existe em PostgreSQL nem em SQLite. Por isso o banco na nuvem é MySQL (Aiven), e não o Postgres gratuito do Render, Neon ou Supabase.
+- **Banco:** **MySQL**. O `.env.example` cai em SQLite por padrão, mas o projeto **depende de MySQL**: a migration `2026_07_08_100001_add_excused_no_show_to_client_sessions_table.php` usa `ALTER TABLE … MODIFY COLUMN … ENUM`, que não existe em PostgreSQL nem em SQLite. Por isso o banco na nuvem precisa falar MySQL, e não Postgres (Render, Neon, Supabase).
+  - O Aiven não oferece mais MySQL grátis (o plano Free dele ficou só para PostgreSQL, Kafka, OpenSearch e Valkey). O banco escolhido é o **TiDB Cloud Starter**, compatível com o protocolo e o SQL do MySQL.
+  - Testado num TiDB 8.5 local: os 247 testes passam, e as migrations (incluindo a do `ENUM`), as chaves estrangeiras, a fila `database` (`FOR UPDATE SKIP LOCKED`), a comparação de e-mail sem diferenciar maiúsculas e o `demo:reset` funcionam.
 - **Fila:** driver `database`. Os jobs enviam e-mails de agendamento e cobrança, cobranças por WhatsApp e sincronização com o Google Calendar. **Precisa de um worker rodando.**
 - **Agendador:** `charges:dispatch` roda diariamente às **09:00 de Brasília** (`America/Sao_Paulo`, 12:00 UTC). O app em si roda em UTC (`config/app.php`).
 - **Arquivos enviados:** fotos de perfil e comprovantes de pagamento vão para o disco definido em `UPLOADS_DISK`. Os dois são privados e só saem por rotas que conferem o dono. No Render, `r2` (Cloudflare R2), porque o disco do contêiner some a cada reinício; num servidor com disco permanente (VPS com `compose.prod.yaml`), `local` basta.
@@ -53,9 +55,9 @@ Já definidas no `render.yaml` (não precisa mexer):
 | `APP_DEBUG` | `false` |
 | `LOG_CHANNEL` / `LOG_LEVEL` | `stderr` / `info` |
 | `RUN_MIGRATIONS` / `RUN_WORKERS` | `1` / `1` |
-| `DB_CONNECTION` | `mysql` |
-| `DB_DATABASE` / `DB_USERNAME` | `defaultdb` / `avnadmin` (padrão do Aiven) |
-| `MYSQL_ATTR_SSL_CA` | `/etc/secrets/aiven-ca.pem` |
+| `DB_CONNECTION` / `DB_PORT` | `mysql` / `4000` (porta do TiDB Cloud) |
+| `DB_DATABASE` | `iwori_agenda` (demo: `iwori_demo`) |
+| `MYSQL_ATTR_SSL_CA` | `/etc/ssl/certs/ca-certificates.crt` (CAs públicas do sistema; o TiDB Cloud exige TLS) |
 | `SESSION_DRIVER` / `SESSION_ENCRYPT` / `SESSION_SECURE_COOKIE` | `database` / `true` / `true` |
 | `QUEUE_CONNECTION` / `CACHE_STORE` / `FILESYSTEM_DISK` | `database` / `database` / `local` |
 | `UPLOADS_DISK` / `R2_BUCKET` | `r2` / `iwori-uploads` |
@@ -68,9 +70,9 @@ Já definidas no `render.yaml` (não precisa mexer):
 |---|---|
 | `APP_KEY` | Gerada por você (passo 4.1). **Segredo.** |
 | `APP_URL` | URL do serviço, ex.: `https://iwori-agenda.onrender.com` |
-| `DB_HOST` | Aiven → serviço MySQL → *Overview* → Host |
-| `DB_PORT` | Aiven → *Overview* → Port |
-| `DB_PASSWORD` | Aiven → *Overview* → Password. **Segredo.** |
+| `DB_HOST` | TiDB Cloud → instância → **Connect** → Host |
+| `DB_USERNAME` | TiDB Cloud → **Connect** → User (vem com o prefixo da instância, ex.: `2abc123.root`) |
+| `DB_PASSWORD` | TiDB Cloud → **Connect** → *Generate Password*. **Segredo.** |
 | `MAIL_USERNAME` | Brevo → *SMTP & API* → aba SMTP → Login |
 | `MAIL_PASSWORD` | Brevo → chave SMTP gerada. **Segredo.** |
 | `MAIL_FROM_ADDRESS` | E-mail remetente verificado na Brevo |
@@ -78,7 +80,7 @@ Já definidas no `render.yaml` (não precisa mexer):
 | `R2_ACCESS_KEY_ID` | Cloudflare → token da API do R2 → Access Key ID |
 | `R2_SECRET_ACCESS_KEY` | Cloudflare → token da API do R2 → Secret Access Key. **Segredo.** |
 
-**Secret file** (Render → *Environment* → *Secret Files*): `aiven-ca.pem`, com o conteúdo do certificado CA baixado do Aiven.
+O serviço da demo pede o mesmo conjunto, com `DB_HOST`, `DB_USERNAME` e `DB_PASSWORD` da **instância da demo** (seção 8).
 
 **Opcionais** (adicione em *Environment* só se for usar):
 
@@ -102,14 +104,19 @@ docker run --rm php:8.4-cli php -r "echo 'base64:'.base64_encode(random_bytes(32
 
 Copie a saída inteira, incluindo o prefixo `base64:`.
 
-### 4.2 Criar o banco no Aiven
+### 4.2 Criar os bancos no TiDB Cloud
 
-1. Crie a conta em <https://console.aiven.io/signup>.
-2. **Create service → MySQL → plano Free.** Anote a região oferecida (ex.: Virginia, nos EUA).
-3. Quando o serviço ficar *Running*, abra **Overview → Connection information** e copie **Host**, **Port** e **Password**. Usuário `avnadmin` e banco `defaultdb` já vêm no `render.yaml`.
-4. Na mesma tela, clique em **CA certificate → Download** e salve o `ca.pem`. Não coloque esse arquivo no repositório: o `.gitignore` já ignora `*.pem`.
+São duas instâncias grátis: uma para a produção e outra para a demo. Assim a demo, que é pública, nunca enxerga os dados reais.
 
-Se a região do Aiven não for a leste dos EUA, troque `region: virginia` no `render.yaml` pela região do Render mais próxima (`oregon`, `ohio`, `virginia`, `frankfurt` ou `singapore`) **antes** de criar o serviço no Render.
+1. Crie a conta em <https://tidbcloud.com> (não pede cartão).
+2. **Create Instance → Starter**, provedor **AWS**, região **N. Virginia (us-east-1)**, a mesma do Render. Nome: `iwori-agenda`. Deixe o limite de gasto (*spending limit*) em **0**: a instância fica no plano grátis.
+3. Repita para a demo, com o nome `iwori-agenda-demo`.
+4. Em cada instância, abra o **SQL Editor** e crie o banco:
+   - produção: `CREATE DATABASE iwori_agenda;`
+   - demo: `CREATE DATABASE iwori_demo;`
+5. Em cada instância, clique em **Connect** (*Public Endpoint*) e anote **Host** e **User**. Depois clique em **Generate Password** e guarde a senha num gerenciador de senhas: ela aparece uma única vez. A porta é sempre `4000`, e o TLS já está configurado no `render.yaml`.
+
+Se escolher outra região no TiDB Cloud, troque `region: virginia` no `render.yaml` pela região do Render mais próxima (`oregon`, `ohio`, `virginia`, `frankfurt` ou `singapore`) **antes** de criar os serviços no Render.
 
 ### 4.3 Configurar o e-mail na Brevo
 
@@ -132,12 +139,10 @@ Sem o R2, coloque `UPLOADS_DISK=local` no Render. O app funciona, mas fotos e co
 ### 4.5 Criar o serviço no Render (Blueprint)
 
 1. Entre em <https://dashboard.render.com> com sua conta do GitHub e autorize o acesso ao repositório `rafalopesbob/iwori-agenda`.
-2. **New → Blueprint →** selecione o repositório. O Render lê o `render.yaml` e mostra o serviço `iwori-agenda`.
-3. Preencha as variáveis pedidas (tabela "Você preenche no Render" acima). Em `APP_URL`, use `https://iwori-agenda.onrender.com`. Se o nome estiver ocupado, o Render mostra a URL real depois, e aí você corrige.
-4. Clique em **Apply**. O primeiro deploy vai falhar com *"Certificado CA do MySQL não encontrado"*. É esperado: o certificado ainda não foi enviado.
-5. Abra o serviço → **Environment → Secret Files → Add Secret File**. Nome: `aiven-ca.pem`. Conteúdo: cole o `ca.pem` do Aiven. Salve.
-6. **Manual Deploy → Deploy latest commit.** Nos logs, espere ver as migrations rodando e o Apache subindo.
-7. Abra `https://<sua-url>.onrender.com/up` (deve responder 200). Depois, `/register` para criar sua conta.
+2. **New → Blueprint →** selecione o repositório. O Render lê o `render.yaml` e mostra os serviços `iwori-agenda` e `iwori-agenda-demo`.
+3. Preencha as variáveis pedidas (tabela "Você preenche no Render" acima; para a demo, seção 8). Em `APP_URL`, use `https://iwori-agenda.onrender.com`. Se o nome estiver ocupado, o Render mostra a URL real depois, e aí você corrige.
+4. Clique em **Apply**. Nos logs, espere ver as migrations rodando e o Apache subindo.
+5. Abra `https://<sua-url>.onrender.com/up` (deve responder 200). Depois, `/register` para criar sua conta.
 
 **Sem Blueprint (configuração manual):** New → Web Service → repositório → **Language: Docker** → Instance type **Free** → depois preencha:
 
@@ -176,14 +181,16 @@ O mesmo código lê as variáveis de cada ambiente, sem `if` no código:
 
 | | Local (Sail) | Render |
 |---|---|---|
-| `DB_HOST` | `mysql` (contêiner) | host do Aiven |
-| `DB_PASSWORD` | gerada no seu `.env` | do Aiven |
-| `MYSQL_ATTR_SSL_CA` | *(não definida, sem TLS)* | `/etc/secrets/aiven-ca.pem` |
+| `DB_HOST` / `DB_PORT` | `mysql` (contêiner) / `3306` | host do TiDB Cloud / `4000` |
+| `DB_USERNAME` / `DB_PASSWORD` | do seu `.env` | da instância no TiDB Cloud |
+| `MYSQL_ATTR_SSL_CA` | *(não definida, sem TLS)* | `/etc/ssl/certs/ca-certificates.crt` |
 | `MAIL_*` | Mailpit (`mailpit:1025`) | Brevo (`smtp-relay.brevo.com:2525`) |
 | `UPLOADS_DISK` | `local` (`storage/app/private`) | `r2` (bucket `iwori-uploads`) |
 | `APP_ENV` / `APP_DEBUG` | `local` / `true` | `production` / `false` |
 
-Para testar o banco do Aiven a partir da sua máquina, sem mexer no `.env` do dia a dia, crie um `.env.aiven` (já ignorado pelo git) com as variáveis do Aiven e `MYSQL_ATTR_SSL_CA` apontando para o `ca.pem`, e rode os comandos com `--env=aiven`. Exemplo: `php artisan migrate:status --env=aiven`.
+Para testar o banco do TiDB Cloud a partir da sua máquina, sem mexer no `.env` do dia a dia, crie um `.env.tidb` (já ignorado pelo git) com as variáveis da instância e `MYSQL_ATTR_SSL_CA` apontando para um pacote de CAs públicas (no Windows, o `cacert.pem` do [curl](https://curl.se/docs/caextract.html)), e rode os comandos com `--env=tidb`. Exemplo: `php artisan migrate:status --env=tidb`.
+
+Para rodar os testes num TiDB local, igual ao da nuvem: `docker run -d -p 127.0.0.1:4000:4000 pingcap/tidb:v8.5.0`, crie o banco `iwori_agenda_test` e rode `php artisan test` com `DB_HOST=127.0.0.1` e `DB_PORT=4000` no ambiente.
 
 ## 6. Checklist de segurança
 
@@ -193,13 +200,13 @@ Para testar o banco do Aiven a partir da sua máquina, sem mexer no `.env` do di
 - [x] Cookies de sessão `Secure`, `HttpOnly`, `SameSite=lax` e sessão criptografada.
 - [x] Proxies confiáveis configurados (HSTS ativo) e throttle de login por IP **e** por e-mail, que segura força bruta mesmo com IP forjado.
 - [x] Confirmação de e-mail obrigatória antes de qualquer envio a clientes (cobranças, confirmação de sessão, cobrança diária). O link sai pela fila: exige SMTP configurado, worker ativo (`RUN_WORKERS`) e `APP_URL` correto. Contas criadas antes desta mudança foram marcadas como confirmadas pela migration `mark_existing_users_as_verified`.
-- [x] Conexão com o banco por TLS, validando o CA do Aiven.
-- [ ] `DEMO_MODE` definido **só** no serviço `iwori-agenda-demo`, que usa database e usuário próprios (seção 8).
+- [x] Conexão com o banco por TLS, validando o certificado do TiDB Cloud com as CAs públicas do sistema.
+- [ ] `DEMO_MODE` definido **só** no serviço `iwori-agenda-demo`, que usa uma instância própria do TiDB Cloud (seção 8).
 - [ ] `APP_KEY` exclusivo de produção, guardado fora do repositório e **nunca trocado**.
 - [ ] Segredos (`APP_KEY`, `DB_PASSWORD`, chave SMTP, `GOOGLE_CLIENT_SECRET`, `WHATSAPP_TOKEN`) só no painel do Render. Nunca em commits, issues ou chats.
 - [ ] Na Brevo, use a **chave SMTP**, não a senha da conta.
 - [ ] No R2, bucket sem acesso público e token só com **Object Read & Write** no bucket `iwori-uploads`.
-- [ ] Opcional: no Aiven, restrinja *Allowed IP addresses* aos IPs de saída do Render (painel do serviço → *Connect → Outbound*).
+- [ ] Opcional: no TiDB Cloud, limite o acesso ao *Public Endpoint* aos IPs de saída do Render (painel do serviço no Render → *Connect → Outbound*).
 - [ ] Se algum segredo vazar, gere outro no provedor e atualize no Render. Exceção: o `APP_KEY`, que só deve ser trocado com um plano de recriptografia dos dados.
 
 ## 7. Limitações do plano gratuito
@@ -207,7 +214,8 @@ Para testar o banco do Aiven a partir da sua máquina, sem mexer no `.env` do di
 - **Disco temporário.** O disco do Render Free some a cada deploy, reinício ou hibernação. Por isso fotos e comprovantes vão para o R2 (`UPLOADS_DISK=r2`). Com `UPLOADS_DISK=local` no Render, eles se perdem. O plano grátis do R2 guarda 10 GB.
 - **Hibernação:** depois de 15 minutos sem acesso, a próxima visita leva cerca de 1 minuto para carregar.
 - **750 horas/mês** por workspace no Render. Um serviço ligado o mês inteiro usa cerca de 744.
-- **Banco de 1 GB** no Aiven Free. O Aiven pode desligar serviços sem uso por muito tempo.
+- **Banco:** cada instância grátis do TiDB Cloud tem 5 GiB e 50 milhões de RUs (unidades de processamento) por mês. Se a cota acabar, novas conexões são recusadas até o mês seguinte, a menos que você defina um limite de gasto. O uso aparece em *Usage this month*, na página da instância.
+- **Conexões:** o TiDB Cloud derruba conexões paradas há mais de ~5 minutos ou abertas há mais de 30. O Laravel reconecta sozinho na próxima consulta.
 - **Memória de 512 MB** para Apache + fila + agendador no mesmo contêiner.
 - **Horário da cobrança:** 09:00 de Brasília. Para mudar, ajuste o `dailyAt` em `bootstrap/app.php` e o despertador do cron-job.org (10 minutos antes).
 
@@ -215,9 +223,11 @@ Para testar o banco do Aiven a partir da sua máquina, sem mexer no `.env` do di
 
 | Sintoma nos logs | Causa e correção |
 |---|---|
-| `Certificado CA do MySQL não encontrado` | Falta o secret file `aiven-ca.pem` (passo 4.5.5). |
-| `SQLSTATE[HY000] [2002]` / timeout | `DB_HOST`/`DB_PORT` errados ou IP do Render fora da allowlist do Aiven. |
-| `Unable to create or change a table without a primary key` | Desative `sql_require_primary_key` em Aiven → *Advanced configuration*. Todas as tabelas atuais têm PK, então só deve aparecer com migrations novas. |
+| `Certificado CA do MySQL não encontrado` | `MYSQL_ATTR_SSL_CA` aponta para um arquivo que não existe na imagem. O valor certo é `/etc/ssl/certs/ca-certificates.crt`. |
+| `SQLSTATE[HY000] [2002]` / timeout | `DB_HOST`/`DB_PORT` errados ou IP do Render fora da lista de acesso do TiDB Cloud. |
+| `Access denied for user` | `DB_USERNAME` sem o prefixo da instância (ex.: `2abc123.root`), senha errada ou dados da instância trocados entre produção e demo. |
+| `Unknown database` | Falta o `CREATE DATABASE` no SQL Editor (passo 4.2). |
+| `Connections are denied` / lentidão no fim do mês | Cota grátis de RUs esgotada. Veja *Usage this month* na instância. |
 | `Unsupported cipher or incorrect key length` | `APP_KEY` sem o prefixo `base64:` ou incompleto. |
 | E-mails não chegam | Remetente não verificado na Brevo, ou porta diferente de 2525. |
 | Erro 500 ao enviar foto ou comprovante (`Unable to write file`, `AccessDenied`, `InvalidAccessKeyId`) | `R2_ENDPOINT`, chaves ou nome do bucket errados, ou token sem permissão de escrita no bucket `iwori-uploads`. |
@@ -234,26 +244,19 @@ O `render.yaml` tem um segundo serviço, `iwori-agenda-demo`. Ele roda o mesmo c
 
 > **Nunca** defina `DEMO_MODE=true` no serviço de produção: ele desliga os envios aos clientes e abre a entrada na conta demo.
 
-### 8.1 Banco da demo no Aiven
+### 8.1 Banco da demo
 
-Use um database e um usuário próprios, no mesmo serviço MySQL do Aiven, para que a demo (pública) não tenha acesso aos dados reais.
+A demo usa a instância `iwori-agenda-demo` do TiDB Cloud, criada no passo 4.2, com o banco `iwori_demo`. Por ser outra instância, com usuário e senha próprios, a demo (pública) não tem como acessar os dados reais.
 
-1. No console do Aiven → seu serviço MySQL → **Databases → Create database**: `iwori_demo`.
-2. **Users → Create user**: `iwori_demo`. Anote a senha gerada.
-3. Conectado como `avnadmin` (MySQL Workbench, HeidiSQL etc., com o `ca.pem`), limite o usuário ao banco da demo:
+### 8.2 Variáveis do serviço no Render
 
-```sql
-REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'iwori_demo'@'%';
-GRANT ALL PRIVILEGES ON iwori_demo.* TO 'iwori_demo'@'%';
-```
+O Blueprint cria o `iwori-agenda-demo` junto com a produção (passo 4.5). Nele, preencha:
 
-### 8.2 Criar o serviço no Render
+1. `APP_KEY` **diferente** do da produção: `php artisan key:generate --show`.
+2. `APP_URL`, ex.: `https://iwori-agenda-demo.onrender.com`.
+3. `DB_HOST`, `DB_USERNAME` e `DB_PASSWORD` da instância **da demo** no TiDB Cloud.
 
-1. Gere um `APP_KEY` **diferente** do da produção: `php artisan key:generate --show`.
-2. No Render, **Blueprints → seu blueprint → Sync**. O serviço `iwori-agenda-demo` aparece como novo.
-3. Preencha `APP_KEY`, `APP_URL` (ex.: `https://iwori-agenda-demo.onrender.com`), `DB_HOST`, `DB_PORT` (os mesmos da produção) e `DB_PASSWORD` (do usuário `iwori_demo`).
-4. Adicione o secret file `aiven-ca.pem` também neste serviço (igual ao passo 4.5.5) e faça **Manual Deploy**.
-5. Abra a URL da demo e clique em **Entrar na demonstração**.
+Depois do deploy, abra a URL da demo e clique em **Entrar na demonstração**.
 
 **Horas do plano Free:** as 750 horas/mês são por workspace e passam a ser divididas entre produção e demo. Os dois serviços dormem quando ninguém acessa, então normalmente sobra. Se a demo for muito usada, acompanhe em *Billing* ou crie a demo num workspace separado (cada um tem suas 750 horas): se as horas acabarem, os serviços Free do workspace param até o mês seguinte, incluindo a produção.
 
@@ -270,6 +273,6 @@ Para ver localmente exatamente como o cliente vê (botão de entrada, faixa e bl
 ## Referências
 
 - Render: [Deploy for Free](https://render.com/docs/free) · [Blueprint spec](https://render.com/docs/blueprint-spec) · [Secrets com Docker](https://render.com/docs/docker-secrets) · [Bloqueio de portas SMTP no Free](https://render.com/changelog/free-web-services-will-no-longer-allow-outbound-traffic-to-smtp-ports)
-- Aiven: [Free plan](https://aiven.io/docs/platform/concepts/free-plan) · [MySQL free tier](https://aiven.io/docs/products/mysql/concepts/mysql-free-tier)
+- TiDB Cloud: [Perguntas frequentes do Starter](https://docs.pingcap.com/tidbcloud/serverless-faqs/) · [Limites e cotas](https://docs.pingcap.com/tidbcloud/serverless-limitations/) · [Preços](https://www.pingcap.com/pricing/)
 - Brevo: [SMTP gratuito](https://www.brevo.com/free-smtp-server)
 - Cloudflare R2: [Preços e plano grátis](https://developers.cloudflare.com/r2/pricing/) · [Tokens da API](https://developers.cloudflare.com/r2/api/tokens/)

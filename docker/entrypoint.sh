@@ -7,8 +7,9 @@ if [ -n "$PORT" ] && [ "$PORT" != "80" ]; then
     sed -ri "s/<VirtualHost \*:80>/<VirtualHost *:${PORT}>/" /etc/apache2/sites-available/000-default.conf
 fi
 
-# CA do MySQL gerenciado (ex.: Aiven). Secret files do Render só são legíveis
-# pelo root, então copiamos para um caminho que o Apache (www-data) lê.
+# CA do MySQL gerenciado. O TiDB Cloud usa o pacote de CAs do sistema; um CA
+# próprio vindo de secret file do Render só é legível pelo root. Copiar para
+# um caminho fixo atende os dois casos e o Apache (www-data) consegue ler.
 if [ -n "$MYSQL_ATTR_SSL_CA" ]; then
     if [ ! -f "$MYSQL_ATTR_SSL_CA" ]; then
         echo "Certificado CA do MySQL não encontrado em $MYSQL_ATTR_SSL_CA" >&2
