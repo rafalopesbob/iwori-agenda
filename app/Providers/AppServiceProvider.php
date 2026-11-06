@@ -31,12 +31,15 @@ class AppServiceProvider extends ServiceProvider
         // Ambiente de demonstração: nada sai do sistema, mesmo que alguém configure
         // as variáveis de envio por engano. E-mails vão para o log; WhatsApp e
         // Google Calendar ficam desligados (os serviços checam isConfigured()).
+        // Comprovantes enviados na demo ficam no disco do contêiner, que é
+        // descartável, e nunca no armazenamento dos dados reais.
         if (config('demo.enabled')) {
             config([
                 'mail.default' => 'log',
                 'services.whatsapp.token' => null,
                 'services.google.client_id' => null,
                 'services.google.client_secret' => null,
+                'filesystems.uploads' => 'local',
             ]);
         }
 

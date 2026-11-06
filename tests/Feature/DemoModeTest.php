@@ -35,6 +35,7 @@ class DemoModeTest extends TestCase
             'services.whatsapp.token' => 'token-configurado-por-engano',
             'services.whatsapp.phone_number_id' => '123',
             'services.google.client_id' => 'client-configurado-por-engano',
+            'filesystems.uploads' => 'r2',
         ]);
 
         (new AppServiceProvider($this->app))->boot();
@@ -160,6 +161,8 @@ class DemoModeTest extends TestCase
         $this->assertSame('log', config('mail.default'));
         $this->assertFalse(app(WhatsAppService::class)->isConfigured());
         $this->assertNull(config('services.google.client_id'));
+        // Comprovantes da demo nunca vão para o armazenamento dos dados reais.
+        $this->assertSame('local', config('filesystems.uploads'));
     }
 
     // ── Reset ────────────────────────────────────────────────────────

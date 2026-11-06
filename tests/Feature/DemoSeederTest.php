@@ -27,8 +27,18 @@ class DemoSeederTest extends TestCase
         $this->assertFalse(User::where('email', DemoSeeder::EMAIL)->exists());
     }
 
+    /**
+     * A agenda da demo só tem sessões de segunda a sexta, e a Ana Beatriz é
+     * atendida às quintas. Fixar uma quinta deixa os testes iguais todo dia.
+     */
+    private function numaQuintaFeira(): void
+    {
+        $this->travelTo(now()->next('thursday')->setTime(14, 0));
+    }
+
     public function test_massa_de_demonstracao_e_coerente_e_pode_ser_recriada(): void
     {
+        $this->numaQuintaFeira();
         $this->seed(DemoSeeder::class);
         $this->seed(DemoSeeder::class);
 
@@ -47,6 +57,7 @@ class DemoSeederTest extends TestCase
     public function test_conta_de_demonstracao_abre_o_painel_com_dados(): void
     {
         $this->withoutVite();
+        $this->numaQuintaFeira();
         $this->seed(DemoSeeder::class);
 
         $this->actingAs(User::where('email', DemoSeeder::EMAIL)->first())

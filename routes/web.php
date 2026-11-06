@@ -63,6 +63,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/profile/photo', [ProfileController::class, 'photo'])->name('profile.photo.show');
     // A conta demo é compartilhada: ninguém troca e-mail, senha ou foto dela.
     Route::middleware('not-demo')->group(function () {
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

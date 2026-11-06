@@ -211,9 +211,9 @@ class ProfileTest extends TestCase
             ->assertSessionHasErrorsIn('password', ['password']);
     }
 
-    public function test_upload_de_foto_salva_no_disk_public(): void
+    public function test_upload_de_foto_salva_no_disco_privado_de_uploads(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
 
         $user = User::factory()->create();
 
@@ -225,12 +225,32 @@ class ProfileTest extends TestCase
 
         $user->refresh();
         $this->assertNotNull($user->photo_path);
-        Storage::disk('public')->assertExists($user->photo_path);
+        $this->assertStringStartsWith("avatars/{$user->id}/", $user->photo_path);
+        Storage::disk('local')->assertExists($user->photo_path);
+    }
+
+    public function test_upload_de_foto_usa_o_disco_configurado(): void
+    {
+        config(['filesystems.uploads' => 'r2']);
+        Storage::fake('r2');
+        Storage::fake('local');
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post('/profile/photo', [
+            'photo' => UploadedFile::fake()->image('avatar.png'),
+        ]);
+
+        $path = $user->refresh()->photo_path;
+        Storage::disk('r2')->assertExists($path);
+        Storage::disk('local')->assertMissing($path);
+
+        $this->actingAs($user)->get($user->photoUrl())->assertOk();
     }
 
     public function test_trocar_foto_apaga_arquivo_antigo(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
 
         $user = User::factory()->create();
 
@@ -238,19 +258,22 @@ class ProfileTest extends TestCase
             'photo' => UploadedFile::fake()->image('primeira.png'),
         ]);
         $oldPath = $user->refresh()->photo_path;
+        $oldUrl = $user->photoUrl();
 
         $this->actingAs($user)->post('/profile/photo', [
             'photo' => UploadedFile::fake()->image('segunda.png'),
         ]);
 
         $user->refresh();
-        Storage::disk('public')->assertMissing($oldPath);
-        Storage::disk('public')->assertExists($user->photo_path);
+        Storage::disk('local')->assertMissing($oldPath);
+        Storage::disk('local')->assertExists($user->photo_path);
+        // URL nova a cada foto: o cache do navegador nunca mostra a antiga.
+        $this->assertNotSame($oldUrl, $user->photoUrl());
     }
 
     public function test_remover_foto(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
 
         $user = User::factory()->create();
         $this->actingAs($user)->post('/profile/photo', [
@@ -263,12 +286,49 @@ class ProfileTest extends TestCase
             ->assertRedirect('/profile');
 
         $this->assertNull($user->refresh()->photo_path);
-        Storage::disk('public')->assertMissing($path);
+        $this->assertNull($user->photoUrl());
+        Storage::disk('local')->assertMissing($path);
+    }
+
+    public function test_foto_e_entregue_so_para_o_dono_pela_rota_autenticada(): void
+    {
+        Storage::fake('local');
+
+        $user = User::factory()->create();
+        $this->actingAs($user)->post('/profile/photo', [
+            'photo' => UploadedFile::fake()->image('avatar.png'),
+        ]);
+        $user->refresh();
+
+        $this->assertStringContainsString('/profile/photo?v=', $user->photoUrl());
+        $this->actingAs($user)->get('/profile')->assertOk()->assertSee($user->photoUrl(), false);
+
+        $response = $this->actingAs($user)->get($user->photoUrl())->assertOk();
+        $this->assertSame('image/png', $response->headers->get('Content-Type'));
+        $this->assertStringContainsString('private', $response->headers->get('Cache-Control'));
+
+        // Outro profissional recebe só a própria foto (aqui, nenhuma): nunca a de outra pessoa.
+        $this->actingAs(User::factory()->create())->get('/profile/photo')->assertNotFound();
+    }
+
+    public function test_foto_exige_login(): void
+    {
+        $this->get('/profile/photo')->assertRedirect('/login');
+    }
+
+    public function test_foto_que_sumiu_do_disco_responde_404(): void
+    {
+        Storage::fake('local');
+
+        $user = User::factory()->create();
+        $user->forceFill(['photo_path' => "avatars/{$user->id}/apagada.png"])->save();
+
+        $this->actingAs($user)->get('/profile/photo')->assertNotFound();
     }
 
     public function test_arquivo_nao_imagem_e_rejeitado(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
 
         $user = User::factory()->create();
 

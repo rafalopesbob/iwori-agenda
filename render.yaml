@@ -63,6 +63,19 @@ services:
       - key: FILESYSTEM_DISK
         value: local
 
+      # ── Arquivos: Cloudflare R2 (o disco do Free some a cada reinício) ─
+      # Fotos de perfil e comprovantes vão para um bucket privado.
+      - key: UPLOADS_DISK
+        value: r2
+      - key: R2_BUCKET
+        value: iwori-uploads
+      - key: R2_ENDPOINT # https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+
       # ── E-mail: Brevo na porta 2525 (o Free bloqueia 25/465/587) ─
       - key: MAIL_MAILER
         value: smtp

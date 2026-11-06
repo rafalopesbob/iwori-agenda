@@ -7,8 +7,9 @@ Guia para publicar o Iwori Agenda na nuvem sem custo, usando:
 | App (web + fila + agendador) | [Render](https://render.com) — web service Docker | Free |
 | Banco MySQL 8 | [Aiven for MySQL](https://aiven.io/mysql) | Free (1 GB) |
 | E-mail transacional | [Brevo](https://www.brevo.com) — SMTP relay | Free (300 e-mails/dia) |
+| Fotos de perfil e comprovantes | [Cloudflare R2](https://www.cloudflare.com/developer-platform/products/r2/) — bucket privado | Free (10 GB) |
 
-Nenhum dos três pede cartão de crédito no cadastro.
+Render, Aiven e Brevo não pedem cartão de crédito no cadastro. O Cloudflare pede uma forma de pagamento para ativar o R2, mesmo no plano grátis; só cobra o que passar do limite gratuito.
 
 ---
 
@@ -22,7 +23,7 @@ Nenhum dos três pede cartão de crédito no cadastro.
 - **Banco:** **MySQL**. O `.env.example` cai em SQLite por padrão, mas o projeto **depende de MySQL**: a migration `2026_07_08_100001_add_excused_no_show_to_client_sessions_table.php` usa `ALTER TABLE … MODIFY COLUMN … ENUM`, que não existe em PostgreSQL nem em SQLite. Por isso o banco na nuvem é MySQL (Aiven), e não o Postgres gratuito do Render, Neon ou Supabase.
 - **Fila:** driver `database`. Os jobs enviam e-mails de agendamento e cobrança, cobranças por WhatsApp e sincronização com o Google Calendar. **Precisa de um worker rodando.**
 - **Agendador:** `charges:dispatch` roda diariamente às **09:00 de Brasília** (`America/Sao_Paulo`, 12:00 UTC). O app em si roda em UTC (`config/app.php`).
-- **Arquivos enviados:** fotos de perfil ficam no disco `public` e comprovantes de pagamento no disco `local`, ambos no filesystem do contêiner (veja as [limitações](#7-limitações-do-plano-gratuito)).
+- **Arquivos enviados:** fotos de perfil e comprovantes de pagamento vão para o disco definido em `UPLOADS_DISK`. Os dois são privados e só saem por rotas que conferem o dono. No Render, `r2` (Cloudflare R2), porque o disco do contêiner some a cada reinício; num servidor com disco permanente (VPS com `compose.prod.yaml`), `local` basta.
 - **Integrações opcionais:** Google Calendar (OAuth 2.0, callback em `/google/callback`) e WhatsApp Cloud API (Meta).
 - **Health check:** `GET /up`, a rota nativa do Laravel.
 
@@ -37,6 +38,7 @@ Nenhum dos três pede cartão de crédito no cadastro.
 | `.dockerignore` | Exclui da imagem `*.pem` (o Render copia secret files para o contexto do build), o link local `public/storage` (quebrava o `docker build`), `render.yaml` e `DEPLOY.md`. |
 | `.env.example` | Documenta a variável `MYSQL_ATTR_SSL_CA` para banco remoto com TLS. |
 | `README.md` | Corrige a imagem auxiliar do Composer: `laravelsail/php85-composer` não existe, o certo é `php84-composer`. |
+| `config/filesystems.php` | Disco `r2` (Cloudflare R2, privado) e a chave `uploads` (`UPLOADS_DISK`), usada pela foto de perfil e pelos comprovantes. A foto passa a sair pela rota autenticada `/profile/photo`, então nenhum arquivo precisa de URL pública. |
 
 Nada disso muda o ambiente local: `PORT`, `RUN_WORKERS` e `MYSQL_ATTR_SSL_CA` só existem no Render. O `compose.prod.yaml` continua igual, com fila e agendador em serviços próprios.
 
@@ -56,6 +58,7 @@ Já definidas no `render.yaml` (não precisa mexer):
 | `MYSQL_ATTR_SSL_CA` | `/etc/secrets/aiven-ca.pem` |
 | `SESSION_DRIVER` / `SESSION_ENCRYPT` / `SESSION_SECURE_COOKIE` | `database` / `true` / `true` |
 | `QUEUE_CONNECTION` / `CACHE_STORE` / `FILESYSTEM_DISK` | `database` / `database` / `local` |
+| `UPLOADS_DISK` / `R2_BUCKET` | `r2` / `iwori-uploads` |
 | `MAIL_MAILER` / `MAIL_HOST` / `MAIL_PORT` | `smtp` / `smtp-relay.brevo.com` / `2525` |
 | `MAIL_FROM_NAME` | `Agenda Iwori` |
 
@@ -71,6 +74,9 @@ Já definidas no `render.yaml` (não precisa mexer):
 | `MAIL_USERNAME` | Brevo → *SMTP & API* → aba SMTP → Login |
 | `MAIL_PASSWORD` | Brevo → chave SMTP gerada. **Segredo.** |
 | `MAIL_FROM_ADDRESS` | E-mail remetente verificado na Brevo |
+| `R2_ENDPOINT` | `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` (passo 4.4) |
+| `R2_ACCESS_KEY_ID` | Cloudflare → token da API do R2 → Access Key ID |
+| `R2_SECRET_ACCESS_KEY` | Cloudflare → token da API do R2 → Secret Access Key. **Segredo.** |
 
 **Secret file** (Render → *Environment* → *Secret Files*): `aiven-ca.pem`, com o conteúdo do certificado CA baixado do Aiven.
 
@@ -114,19 +120,14 @@ O plano Free do Render bloqueia as portas SMTP 25, 465 e 587 (desde setembro de 
 3. **SMTP & API → aba SMTP → Generate a new SMTP key.** Anote o **Login** (`MAIL_USERNAME`) e a **chave** (`MAIL_PASSWORD`).
 4. Confira na mesma página se a porta 2525 aparece entre as portas aceitas.
 
-### 4.4 Enviar as alterações para o GitHub
+### 4.4 Criar o bucket no Cloudflare R2
 
-```bash
-git add render.yaml DEPLOY.md docker/entrypoint.sh bootstrap/app.php .gitignore .dockerignore .env.example README.md
-```
+1. No painel do Cloudflare, abra **R2 Object Storage** e ative o R2. Ele pede uma forma de pagamento, mas só cobra o que passar do plano gratuito (10 GB).
+2. **Create bucket**, nome `iwori-uploads` (o mesmo do `render.yaml`). Deixe o acesso público **desligado**: os arquivos passam pelo app, que confere o dono antes de entregar.
+3. Copie o **Account ID** (aparece na página do R2). O `R2_ENDPOINT` é `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`.
+4. **Manage API tokens → Create API token**: permissão **Object Read & Write**, aplicada **só ao bucket `iwori-uploads`**. Anote o **Access Key ID** e o **Secret Access Key**: o segredo aparece uma única vez.
 
-```bash
-git commit -m "Prepara deploy gratuito no Render com MySQL no Aiven"
-```
-
-```bash
-git push origin main
-```
+Sem o R2, coloque `UPLOADS_DISK=local` no Render. O app funciona, mas fotos e comprovantes somem a cada deploy, reinício ou hibernação: serve só para testar.
 
 ### 4.5 Criar o serviço no Render (Blueprint)
 
@@ -179,6 +180,7 @@ O mesmo código lê as variáveis de cada ambiente, sem `if` no código:
 | `DB_PASSWORD` | gerada no seu `.env` | do Aiven |
 | `MYSQL_ATTR_SSL_CA` | *(não definida, sem TLS)* | `/etc/secrets/aiven-ca.pem` |
 | `MAIL_*` | Mailpit (`mailpit:1025`) | Brevo (`smtp-relay.brevo.com:2525`) |
+| `UPLOADS_DISK` | `local` (`storage/app/private`) | `r2` (bucket `iwori-uploads`) |
 | `APP_ENV` / `APP_DEBUG` | `local` / `true` | `production` / `false` |
 
 Para testar o banco do Aiven a partir da sua máquina, sem mexer no `.env` do dia a dia, crie um `.env.aiven` (já ignorado pelo git) com as variáveis do Aiven e `MYSQL_ATTR_SSL_CA` apontando para o `ca.pem`, e rode os comandos com `--env=aiven`. Exemplo: `php artisan migrate:status --env=aiven`.
@@ -196,12 +198,13 @@ Para testar o banco do Aiven a partir da sua máquina, sem mexer no `.env` do di
 - [ ] `APP_KEY` exclusivo de produção, guardado fora do repositório e **nunca trocado**.
 - [ ] Segredos (`APP_KEY`, `DB_PASSWORD`, chave SMTP, `GOOGLE_CLIENT_SECRET`, `WHATSAPP_TOKEN`) só no painel do Render. Nunca em commits, issues ou chats.
 - [ ] Na Brevo, use a **chave SMTP**, não a senha da conta.
+- [ ] No R2, bucket sem acesso público e token só com **Object Read & Write** no bucket `iwori-uploads`.
 - [ ] Opcional: no Aiven, restrinja *Allowed IP addresses* aos IPs de saída do Render (painel do serviço → *Connect → Outbound*).
 - [ ] Se algum segredo vazar, gere outro no provedor e atualize no Render. Exceção: o `APP_KEY`, que só deve ser trocado com um plano de recriptografia dos dados.
 
 ## 7. Limitações do plano gratuito
 
-- **Arquivos enviados se perdem.** O disco do Render Free é efêmero: fotos de perfil e **comprovantes de pagamento** somem a cada deploy, reinício ou hibernação. Para guardá-los de verdade, é preciso um storage S3-compatível (ex.: Cloudflare R2 ou Backblaze B2), com o pacote `league/flysystem-aws-s3-v3` e os controllers usando um disco configurável.
+- **Disco temporário.** O disco do Render Free some a cada deploy, reinício ou hibernação. Por isso fotos e comprovantes vão para o R2 (`UPLOADS_DISK=r2`). Com `UPLOADS_DISK=local` no Render, eles se perdem. O plano grátis do R2 guarda 10 GB.
 - **Hibernação:** depois de 15 minutos sem acesso, a próxima visita leva cerca de 1 minuto para carregar.
 - **750 horas/mês** por workspace no Render. Um serviço ligado o mês inteiro usa cerca de 744.
 - **Banco de 1 GB** no Aiven Free. O Aiven pode desligar serviços sem uso por muito tempo.
@@ -217,6 +220,7 @@ Para testar o banco do Aiven a partir da sua máquina, sem mexer no `.env` do di
 | `Unable to create or change a table without a primary key` | Desative `sql_require_primary_key` em Aiven → *Advanced configuration*. Todas as tabelas atuais têm PK, então só deve aparecer com migrations novas. |
 | `Unsupported cipher or incorrect key length` | `APP_KEY` sem o prefixo `base64:` ou incompleto. |
 | E-mails não chegam | Remetente não verificado na Brevo, ou porta diferente de 2525. |
+| Erro 500 ao enviar foto ou comprovante (`Unable to write file`, `AccessDenied`, `InvalidAccessKeyId`) | `R2_ENDPOINT`, chaves ou nome do bucket errados, ou token sem permissão de escrita no bucket `iwori-uploads`. |
 
 ## 8. Ambiente de demonstração para clientes
 
@@ -224,7 +228,7 @@ O `render.yaml` tem um segundo serviço, `iwori-agenda-demo`. Ele roda o mesmo c
 
 - **Login com um clique:** a tela de login ganha o botão **Entrar na demonstração**, que abre a conta fictícia da Helena Rocha sem expor senha.
 - **Dados sempre atuais:** o `DemoSeeder` recria a conta a cada início do contêiner (cada deploy e cada vez que o serviço acorda) e todo dia às 04:00 de Brasília (`DEMO_RESET_AT`). Agenda, presenças e cobranças ficam coerentes com a data de hoje.
-- **Nada sai do sistema:** e-mails vão para o log; WhatsApp e Google Calendar ficam desligados, mesmo que alguém configure as variáveis por engano.
+- **Nada sai do sistema:** e-mails vão para o log; WhatsApp e Google Calendar ficam desligados, mesmo que alguém configure as variáveis por engano. Comprovantes enviados na demo ficam no disco do contêiner, nunca no R2.
 - **Conta protegida:** cadastro de contas e alterações de perfil (senha, e-mail, foto) ficam bloqueados. Agendar, marcar presença, cobrar e editar templates funcionam e voltam ao estado inicial no próximo reset.
 - **Conta compartilhada:** todos os visitantes usam a mesma conta e veem o que os outros mexeram até o próximo reset.
 
@@ -268,3 +272,4 @@ Para ver localmente exatamente como o cliente vê (botão de entrada, faixa e bl
 - Render: [Deploy for Free](https://render.com/docs/free) · [Blueprint spec](https://render.com/docs/blueprint-spec) · [Secrets com Docker](https://render.com/docs/docker-secrets) · [Bloqueio de portas SMTP no Free](https://render.com/changelog/free-web-services-will-no-longer-allow-outbound-traffic-to-smtp-ports)
 - Aiven: [Free plan](https://aiven.io/docs/platform/concepts/free-plan) · [MySQL free tier](https://aiven.io/docs/products/mysql/concepts/mysql-free-tier)
 - Brevo: [SMTP gratuito](https://www.brevo.com/free-smtp-server)
+- Cloudflare R2: [Preços e plano grátis](https://developers.cloudflare.com/r2/pricing/) · [Tokens da API](https://developers.cloudflare.com/r2/api/tokens/)

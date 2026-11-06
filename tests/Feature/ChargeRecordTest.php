@@ -257,6 +257,40 @@ class ChargeRecordTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_comprovante_usa_o_disco_configurado(): void
+    {
+        config(['filesystems.uploads' => 'r2']);
+        Storage::fake('r2');
+        Storage::fake('local');
+
+        $user = User::factory()->create();
+        $charge = Charge::factory()->forUser($user)->pending()->create();
+
+        $this->actingAs($user)->patch("/charges/{$charge->id}/pay", [
+            'receipt' => UploadedFile::fake()->create('comprovante.pdf', 100, 'application/pdf'),
+        ]);
+
+        $path = $charge->refresh()->receipt_path;
+        Storage::disk('r2')->assertExists($path);
+        Storage::disk('local')->assertMissing($path);
+
+        $response = $this->actingAs($user)->get("/charges/{$charge->id}/receipt")->assertOk();
+        $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
+    }
+
+    public function test_comprovante_que_sumiu_do_disco_responde_404(): void
+    {
+        Storage::fake('local');
+
+        $user = User::factory()->create();
+        $charge = Charge::factory()->forUser($user)->paid()->create();
+        $charge->forceFill(['receipt_path' => "receipts/{$user->id}/apagado.pdf"])->save();
+
+        $this->actingAs($user)
+            ->get("/charges/{$charge->id}/receipt")
+            ->assertNotFound();
+    }
+
     public function test_reabrir_cobranca_volta_para_pendente(): void
     {
         $user = User::factory()->create();

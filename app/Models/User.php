@@ -68,12 +68,13 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * URL pública da foto de perfil, quando houver.
+     * URL da foto de perfil, quando houver. A foto é privada e sai pela rota
+     * autenticada profile.photo.show; o ?v= muda a cada nova foto (cache).
      */
     public function photoUrl(): ?string
     {
         return $this->photo_path !== null
-            ? Storage::disk('public')->url($this->photo_path)
+            ? route('profile.photo.show', ['v' => substr(sha1($this->photo_path), 0, 12)])
             : null;
     }
 

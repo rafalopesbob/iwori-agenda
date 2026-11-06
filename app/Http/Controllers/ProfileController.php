@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProfileController extends Controller
 {
@@ -70,13 +71,14 @@ class ProfileController extends Controller
     public function updatePhoto(UpdateProfilePhotoRequest $request): RedirectResponse
     {
         $user = $request->user();
+        $disk = config('filesystems.uploads');
 
         if ($user->photo_path !== null) {
-            Storage::disk('public')->delete($user->photo_path);
+            Storage::disk($disk)->delete($user->photo_path);
         }
 
         $user->forceFill([
-            'photo_path' => $request->file('photo')->store('avatars', 'public'),
+            'photo_path' => $request->file('photo')->store("avatars/{$user->id}", $disk),
         ])->save();
 
         return redirect()->route('profile.edit')
@@ -91,11 +93,32 @@ class ProfileController extends Controller
         $user = $request->user();
 
         if ($user->photo_path !== null) {
-            Storage::disk('public')->delete($user->photo_path);
+            Storage::disk(config('filesystems.uploads'))->delete($user->photo_path);
             $user->forceFill(['photo_path' => null])->save();
         }
 
         return redirect()->route('profile.edit')
             ->with('status', 'Foto de perfil removida.');
+    }
+
+    /**
+     * Entrega a foto de perfil do próprio profissional.
+     *
+     * A foto fica no disco privado de uploads (local ou R2) e só é exibida para
+     * o dono, então passa pelo app em vez de ter uma URL pública. O nome do
+     * arquivo muda a cada envio, e o ?v= da URL troca junto: o navegador pode
+     * guardar a imagem em cache sem nunca mostrar uma foto antiga.
+     */
+    public function photo(Request $request): StreamedResponse
+    {
+        $user = $request->user();
+        $disk = Storage::disk(config('filesystems.uploads'));
+
+        abort_unless($user->photo_path !== null && $disk->exists($user->photo_path), 404);
+
+        return $disk->response($user->photo_path, null, [
+            'Cache-Control' => 'private, max-age=604800',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 }

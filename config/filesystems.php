@@ -17,6 +17,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Arquivos enviados pelos usuários
+    |--------------------------------------------------------------------------
+    |
+    | Disco das fotos de perfil e dos comprovantes de pagamento. Os dois são
+    | privados e só saem por rotas autenticadas (ProfileController::photo e
+    | ChargeRecordController::receipt). "local" serve num servidor com disco
+    | permanente (VPS, compose.prod.yaml); "r2" serve onde o disco some a cada
+    | reinício (Render Free). No modo demo é sempre "local".
+    |
+    */
+
+    'uploads' => env('UPLOADS_DISK', 'local'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |
@@ -57,6 +72,26 @@ return [
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
             'throw' => false,
+            'report' => false,
+        ],
+
+        // Cloudflare R2 (compatível com S3). Bucket privado: nada é público,
+        // os arquivos passam pelo app, que confere o dono antes de entregar.
+        'r2' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => 'auto',
+            'bucket' => env('R2_BUCKET'),
+            // https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'visibility' => 'private',
+            // Só calcula checksums quando a operação exige (compatibilidade com o R2).
+            'request_checksum_calculation' => 'when_required',
+            'response_checksum_validation' => 'when_required',
+            // Falha no envio vira erro (e log), nunca um comprovante "salvo" em branco.
+            'throw' => true,
             'report' => false,
         ],
 

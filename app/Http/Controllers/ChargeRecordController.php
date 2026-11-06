@@ -60,12 +60,14 @@ class ChargeRecordController extends Controller
         $validated = $request->validated();
 
         if ($request->hasFile('receipt')) {
+            $disk = config('filesystems.uploads');
+
             if ($charge->receipt_path !== null) {
-                Storage::disk('local')->delete($charge->receipt_path);
+                Storage::disk($disk)->delete($charge->receipt_path);
             }
 
             $charge->forceFill([
-                'receipt_path' => $request->file('receipt')->store("receipts/{$charge->user_id}", 'local'),
+                'receipt_path' => $request->file('receipt')->store("receipts/{$charge->user_id}", $disk),
             ]);
         }
 
@@ -103,8 +105,13 @@ class ChargeRecordController extends Controller
     {
         $this->authorize('view', $charge);
 
-        abort_unless($charge->receipt_path !== null, 404);
+        $disk = Storage::disk(config('filesystems.uploads'));
 
-        return Storage::disk('local')->response($charge->receipt_path);
+        abort_unless($charge->receipt_path !== null && $disk->exists($charge->receipt_path), 404);
+
+        return $disk->response($charge->receipt_path, null, [
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 }
