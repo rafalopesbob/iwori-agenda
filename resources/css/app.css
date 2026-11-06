@@ -41,6 +41,12 @@
     display: none !important;
 }
 
+/* O Edge desenha um "olho" próprio nos campos de senha; o app já tem o seu (x-password-input). */
+input::-ms-reveal,
+input::-ms-clear {
+    display: none;
+}
+
 /* Respeita a preferência do sistema por menos movimento. */
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {

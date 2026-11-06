@@ -22,8 +22,7 @@
 
         <div>
             <label for="password" class="block text-sm font-medium text-ink mb-1.5">Nova senha</label>
-            <input id="password" type="password" name="password" required autofocus autocomplete="new-password"
-                   class="w-full rounded-xl border border-line-strong bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-subtle focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/25">
+            <x-password-input id="password" name="password" required autofocus autocomplete="new-password" />
             @error('password')
                 <p class="text-sm text-danger-ink mt-1.5">{{ $message }}</p>
             @enderror
@@ -31,8 +30,7 @@
 
         <div>
             <label for="password_confirmation" class="block text-sm font-medium text-ink mb-1.5">Confirmar nova senha</label>
-            <input id="password_confirmation" type="password" name="password_confirmation" required autocomplete="new-password"
-                   class="w-full rounded-xl border border-line-strong bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-subtle focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/25">
+            <x-password-input id="password_confirmation" name="password_confirmation" required autocomplete="new-password" />
         </div>
 
         <button type="submit" class="inline-flex w-full items-center justify-center gap-2 min-h-11 px-5 rounded-xl bg-brand hover:bg-brand-dark text-white text-sm font-semibold transition-colors">

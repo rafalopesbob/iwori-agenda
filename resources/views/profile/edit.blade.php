@@ -82,9 +82,8 @@
             {{-- Só aparece ao trocar o e-mail: a troca exige confirmar a senha atual. --}}
             <div x-cloak x-show="email !== original">
                 <label for="email_current_password" class="block text-sm font-medium text-ink mb-1.5">Senha atual *</label>
-                <input id="email_current_password" type="password" name="email_current_password" autocomplete="current-password"
-                       :required="email !== original"
-                       class="w-full rounded-xl border border-line-strong bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-subtle focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/25">
+                <x-password-input id="email_current_password" name="email_current_password" autocomplete="current-password"
+                                  x-bind:required="email !== original" />
                 <p class="text-sm text-muted mt-1.5">Para trocar o e-mail da conta, confirme sua senha.</p>
                 @error('email_current_password')
                     <p class="text-sm text-danger-ink mt-1.5">{{ $message }}</p>
@@ -109,8 +108,7 @@
 
             <div>
                 <label for="current_password" class="block text-sm font-medium text-ink mb-1.5">Senha atual *</label>
-                <input id="current_password" type="password" name="current_password" required autocomplete="current-password"
-                       class="w-full rounded-xl border border-line-strong bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-subtle focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/25">
+                <x-password-input id="current_password" name="current_password" required autocomplete="current-password" />
                 @error('current_password', 'password')
                     <p class="text-sm text-danger-ink mt-1.5">{{ $message }}</p>
                 @enderror
@@ -119,8 +117,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label for="password" class="block text-sm font-medium text-ink mb-1.5">Nova senha *</label>
-                    <input id="password" type="password" name="password" required autocomplete="new-password"
-                           class="w-full rounded-xl border border-line-strong bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-subtle focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/25">
+                    <x-password-input id="password" name="password" required autocomplete="new-password" />
                     @error('password', 'password')
                         <p class="text-sm text-danger-ink mt-1.5">{{ $message }}</p>
                     @enderror
@@ -128,8 +125,7 @@
 
                 <div>
                     <label for="password_confirmation" class="block text-sm font-medium text-ink mb-1.5">Confirmar nova senha *</label>
-                    <input id="password_confirmation" type="password" name="password_confirmation" required autocomplete="new-password"
-                           class="w-full rounded-xl border border-line-strong bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-subtle focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/25">
+                    <x-password-input id="password_confirmation" name="password_confirmation" required autocomplete="new-password" />
                 </div>
             </div>
 
