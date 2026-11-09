@@ -82,6 +82,11 @@
 
     {{-- Consentimento só faz sentido quando o canal inclui WhatsApp. --}}
     <div x-cloak x-show="channel !== 'email'" class="rounded-xl bg-canvas px-4 py-3">
+        @unless (app(App\Services\WhatsAppService::class)->isConfigured())
+            <p class="mb-2 rounded-lg bg-warn-tint px-3 py-2 text-[13px] text-warn-ink">
+                O envio por WhatsApp ainda não está ativo. Até lá, as cobranças deste cliente vão para o e-mail cadastrado.
+            </p>
+        @endunless
         <label class="flex items-start gap-3 min-h-11 py-1 text-[15px]">
             <input type="hidden" name="whatsapp_opt_in" value="0">
             <input type="checkbox" name="whatsapp_opt_in" value="1"
@@ -89,7 +94,7 @@
                    class="mt-0.5 size-4 rounded border-line-strong accent-brand">
             <span>
                 O cliente autorizou receber cobranças por WhatsApp
-                <span class="block text-[13px] text-muted mt-0.5">Sem essa autorização, a cobrança não é enviada pelo WhatsApp.</span>
+                <span class="block text-[13px] text-muted mt-0.5">Sem essa autorização, a cobrança vai só por e-mail.</span>
             </span>
         </label>
         @error('whatsapp_opt_in')

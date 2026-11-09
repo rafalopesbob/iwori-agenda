@@ -131,6 +131,25 @@ class Client extends Model
     }
 
     /**
+     * Canal pelo qual a cobrança sai de fato. Quando o WhatsApp não pode ser
+     * usado (desligado no servidor, sem autorização ou sem celular válido),
+     * a cobrança vai por e-mail, para o cliente não ficar sem aviso.
+     * Null quando não há como avisar o cliente.
+     */
+    public function chargeDeliveryChannel(bool $whatsappEnabled): ?BillingChannel
+    {
+        $whatsapp = $this->billing_channel->sendsWhatsapp() && $whatsappEnabled && $this->canReceiveWhatsapp();
+        $email = ($this->billing_channel->sendsEmail() || ! $whatsapp) && filled($this->email);
+
+        return match (true) {
+            $email && $whatsapp => BillingChannel::Both,
+            $whatsapp => BillingChannel::Whatsapp,
+            $email => BillingChannel::Email,
+            default => null,
+        };
+    }
+
+    /**
      * Registra ou revoga a autorização para cobranças por WhatsApp,
      * preservando a data original enquanto ela continuar valendo.
      */

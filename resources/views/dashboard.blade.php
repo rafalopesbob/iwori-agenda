@@ -170,7 +170,18 @@
             @endif
         </section>
 
-        {{-- No desktop o status do Google Agenda fica no menu lateral. --}}
+        {{-- No desktop o status do WhatsApp e do Google Agenda fica no menu lateral. --}}
+        @php $whatsappOn = app(App\Services\WhatsAppService::class)->isConfigured(); @endphp
+        <section class="lg:hidden rounded-[18px] border border-line bg-white px-[22px] py-5 flex items-start gap-3">
+            <span class="mt-1.5 size-2 rounded-full shrink-0 {{ $whatsappOn ? 'bg-accent' : 'bg-line-strong' }}"></span>
+            <div class="min-w-0 flex-1">
+                <h2 class="text-[15px] font-semibold">WhatsApp</h2>
+                <p class="mt-0.5 text-sm text-muted">
+                    {{ $whatsappOn ? 'Ativo. Cobranças saem pelo WhatsApp para quem autorizou.' : 'Ainda não ativado. Até lá, as cobranças vão por e-mail.' }}
+                </p>
+            </div>
+        </section>
+
         @if (config('services.google.client_id'))
             <section class="lg:hidden rounded-[18px] border border-line bg-white px-[22px] py-5 flex items-start gap-3">
                 <span class="mt-1.5 size-2 rounded-full shrink-0 {{ auth()->user()->hasGoogleCalendar() ? 'bg-accent' : 'bg-line-strong' }}"></span>

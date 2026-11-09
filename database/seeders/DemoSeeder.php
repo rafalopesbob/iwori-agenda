@@ -22,15 +22,16 @@ use Illuminate\Support\Str;
  *
  * Uso: php artisan db:seed --class=DemoSeeder
  * Pode rodar de novo: a conta de demonstração é recriada do zero.
- * Login: helena.rocha@example.com, com a senha padrão da UserFactory.
+ * Login: katia.andrade@example.com, com a senha padrão da UserFactory.
  */
 class DemoSeeder extends Seeder
 {
-    public const EMAIL = 'helena.rocha@example.com';
+    public const EMAIL = 'katia.andrade@example.com';
 
     /**
      * Agenda semanal de cada cliente: [nome, valor, ciclo, dia/intervalo, canal,
-     * dia da semana (1 = segunda), horário, duração, a cada N semanas, ativo].
+     * dia da semana (1 = segunda, numa semana em que hoje é quinta), horário,
+     * duração, a cada N semanas, ativo]. Veja weekdayFor().
      */
     protected const CLIENTS = [
         ['Ana Beatriz Souza', 200, 'weekly', null, 'email', 4, '08:00', 50, 1, true],
@@ -82,7 +83,7 @@ class DemoSeeder extends Seeder
         User::where('email', self::EMAIL)->delete();
 
         $user = User::factory()->create([
-            'name' => 'Helena Rocha',
+            'name' => 'Kátia Andrade',
             'email' => self::EMAIL,
         ]);
 
@@ -110,6 +111,7 @@ class DemoSeeder extends Seeder
 
             // Clientes inativos encerraram o acompanhamento no fim do primeiro mês.
             $lastDay = $active ? $until : $from->endOfMonth();
+            $weekday = $this->weekdayFor($weekday, $today->dayOfWeekIso);
             $sessions = $this->seedSessions($client, $from, $lastDay, $today, $weekday, $time, $duration, $every);
 
             $this->seedCharges($client, $sessions, $today, $from);
@@ -122,6 +124,21 @@ class DemoSeeder extends Seeder
             'subject' => 'Resumo do seu acompanhamento — {{periodo}}',
             'body' => "Olá, {{cliente_nome}}!\n\nSegue o resumo das sessões de {{periodo}}:\n\n{{lista_sessoes}}\n\nValor total: {{valor}}\nPIX: [CHAVE PIX DA PROFISSIONAL]\n\nQualquer dúvida, é só responder este e-mail.\n{{profissional_nome}}",
         ]);
+    }
+
+    /**
+     * A agenda foi desenhada com a quinta-feira como o dia mais cheio. Gira os
+     * dias para que esse dia caia sempre em hoje, e o painel abra com sessões
+     * em qualquer dia da apresentação. Em dia útil, gira só de segunda a
+     * sexta (o sábado fica no sábado); no fim de semana, gira a semana toda.
+     */
+    protected function weekdayFor(int $weekday, int $todayIso): int
+    {
+        if ($todayIso <= 5) {
+            return $weekday > 5 ? $weekday : (($weekday - 4 + $todayIso - 1) % 5 + 5) % 5 + 1;
+        }
+
+        return (($weekday - 4 + $todayIso - 1) % 7 + 7) % 7 + 1;
     }
 
     /**
