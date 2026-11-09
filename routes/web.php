@@ -103,4 +103,5 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::get('/google/connect', [GoogleCalendarController::class, 'redirect'])->name('google.connect');
     Route::get('/google/callback', [GoogleCalendarController::class, 'callback'])->name('google.callback');
     Route::post('/google/disconnect', [GoogleCalendarController::class, 'disconnect'])->name('google.disconnect');
+    Route::get('/ajuda/google-agenda', [GoogleCalendarController::class, 'help'])->name('help.google-calendar');
 });

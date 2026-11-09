@@ -163,8 +163,50 @@ Sem o R2, coloque `UPLOADS_DISK=local` no Render. O app funciona, mas fotos e co
 
 ### 4.6 Integrações (opcional)
 
-- **Google Calendar:** no Google Cloud Console → *Credentials* → seu OAuth client → **Authorized redirect URIs**, adicione `https://<sua-url>.onrender.com/google/callback`. Depois, coloque `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` no Render.
+- **Google Agenda:** veja o passo a passo completo em [4.6.1](#461-google-agenda).
 - **WhatsApp:** adicione `WHATSAPP_TOKEN` e `WHATSAPP_PHONE_ID` (o template padrão é `cobranca_iwori`). Só recebem por WhatsApp os clientes com celular válido e autorização marcada no cadastro. Se a Meta falhar, a mensagem é refeita sozinha até 3 vezes, sem reenviar o e-mail.
+
+#### 4.6.1 Google Agenda
+
+O app só **envia** as sessões para a agenda principal da profissional, com o escopo `calendar.events`. Ele não lê a agenda do Google.
+
+**Uma vez só, no [Google Cloud Console](https://console.cloud.google.com)**, com a conta Google de quem administra o sistema:
+
+1. Crie um projeto (ex.: "Agenda Iwori").
+2. **APIs e serviços → Biblioteca**: ative a **Google Calendar API**.
+3. **Google Auth Platform → Branding** (a antiga "Tela de consentimento OAuth"):
+   - público **Externo**;
+   - nome do app "Agenda Iwori" e e-mail de suporte.
+4. **Data Access → Add or remove scopes**: adicione `https://www.googleapis.com/auth/calendar.events`. Ele aparece como escopo **sensível**.
+5. **Clients → Create client → Web application**:
+   - em **Authorized redirect URIs**, adicione `http://localhost/google/callback` (ambiente local) e `https://<sua-url>.onrender.com/google/callback` (produção);
+   - copie o **Client ID** e o **Client secret** para `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`, no `.env` local e no Render. O secret é **segredo**.
+6. **Audience → Publishing status**: escolha um dos caminhos abaixo.
+
+| Status | Quem consegue conectar | O que a profissional vê | A conexão dura | Serve para |
+|---|---|---|---|---|
+| *Testing* | Só os e-mails cadastrados em *Test users* (até 100) | Aviso "O Google não verificou este app" | **7 dias**, depois precisa reconectar | Demonstração |
+| *In production*, sem verificação | Qualquer conta, até 100 pessoas | O mesmo aviso: ela clica em *Avançado* e continua | Não expira | Poucas profissionais |
+| *In production*, verificado | Qualquer conta, sem limite | Nenhum aviso | Não expira | Vender para mais profissionais |
+
+A verificação pede domínio próprio (um `*.onrender.com` não serve), página inicial e política de privacidade publicadas nesse domínio e um vídeo mostrando o uso da agenda. A análise leva de dias a semanas. Depois de aprovada, defina `GOOGLE_APP_VERIFIED=true`: a página de ajuda deixa de mostrar o passo do aviso.
+
+**Variáveis opcionais:**
+
+| Variável | Padrão | Uso |
+|---|---|---|
+| `GOOGLE_CALENDAR_TIMEZONE` | `America/Sao_Paulo` | Fuso em que as profissionais digitam os horários. O evento vai para o Google com esse fuso. |
+| `GOOGLE_APP_VERIFIED` | `false` | `true` depois da verificação do Google. |
+
+**Para a profissional:** o passo a passo de conexão está no próprio app, em `/ajuda/google-agenda` (link **Como funciona** no quadro Google Agenda).
+
+**O que é sincronizado:**
+- ao conectar, as sessões agendadas de hoje em diante vão para o Google;
+- sessão criada, editada ou arrastada: o evento é criado ou atualizado, sem duplicar;
+- sessão cancelada: o evento é removido; desfeito o cancelamento, ele volta;
+- ao desconectar, os eventos já criados ficam na agenda do Google.
+
+Tudo passa pela fila, então o worker precisa estar ligado (no Render ele já está previsto).
 
 ### 4.7 Acordar o app para a cobrança diária
 

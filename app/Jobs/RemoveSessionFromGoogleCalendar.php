@@ -13,6 +13,13 @@ class RemoveSessionFromGoogleCalendar implements ShouldQueue
     use Queueable, SerializesModels;
 
     /**
+     * Espera entre as tentativas (limite de requisições do Google).
+     *
+     * @var array<int, int>
+     */
+    public array $backoff = [30, 120];
+
+    /**
      * Create a new job instance.
      */
     public function __construct(

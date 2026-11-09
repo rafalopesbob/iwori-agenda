@@ -177,14 +177,20 @@
                 <div class="min-w-0 flex-1">
                     <h2 class="text-[15px] font-semibold">Google Agenda</h2>
                     @if (auth()->user()->hasGoogleCalendar())
-                        <p class="mt-0.5 text-sm text-muted">Conectado. Novas sessões aparecem no seu calendário.</p>
-                        <form method="POST" action="{{ route('google.disconnect') }}">
-                            @csrf
-                            <button type="submit" class="min-h-11 text-sm font-medium text-danger-ink hover:underline">Desconectar</button>
-                        </form>
+                        <p class="mt-0.5 text-sm text-muted">Conectado. Suas sessões aparecem no Google Agenda.</p>
+                        <div class="flex flex-wrap gap-x-4">
+                            <form method="POST" action="{{ route('google.disconnect') }}">
+                                @csrf
+                                <button type="submit" class="min-h-11 text-sm font-medium text-danger-ink hover:underline">Desconectar</button>
+                            </form>
+                            <a href="{{ route('help.google-calendar') }}" class="inline-flex items-center min-h-11 text-sm font-medium text-muted hover:text-ink hover:underline">Como funciona</a>
+                        </div>
                     @else
-                        <p class="mt-0.5 text-sm text-muted">Espelhe suas sessões no calendário do Google.</p>
-                        <a href="{{ route('google.connect') }}" class="inline-flex items-center min-h-11 text-sm font-semibold text-brand hover:underline">Conectar</a>
+                        <p class="mt-0.5 text-sm text-muted">Veja suas sessões no Google Agenda, com lembrete no celular.</p>
+                        <div class="flex flex-wrap gap-x-4">
+                            <a href="{{ route('google.connect') }}" class="inline-flex items-center min-h-11 text-sm font-semibold text-brand hover:underline">Conectar</a>
+                            <a href="{{ route('help.google-calendar') }}" class="inline-flex items-center min-h-11 text-sm font-medium text-muted hover:text-ink hover:underline">Como funciona</a>
+                        </div>
                     @endif
                 </div>
             </section>

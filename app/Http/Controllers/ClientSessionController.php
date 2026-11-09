@@ -209,11 +209,16 @@ class ClientSessionController extends Controller
             'status' => ['required', Rule::enum(SessionStatus::class)],
         ]);
 
+        $wasCanceled = $session->status === SessionStatus::Canceled;
+
         $session->update(['status' => $validated['status']]);
 
-        // Sessão cancelada sai do Google Calendar do profissional.
+        // Sessão cancelada sai do Google Calendar do profissional;
+        // desfeito o cancelamento, o evento é criado de novo.
         if ($session->status === SessionStatus::Canceled && $session->google_event_id) {
             RemoveSessionFromGoogleCalendar::dispatch($session);
+        } elseif ($wasCanceled && $session->status !== SessionStatus::Canceled) {
+            $this->syncToGoogle($session);
         }
 
         return back()->with('status', 'Sessão marcada como '.$session->status->label().'.');

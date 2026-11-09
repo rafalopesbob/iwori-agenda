@@ -38,6 +38,11 @@ return [
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        // Fuso dos horários das sessões ao criar os eventos no Google.
+        'timezone' => env('GOOGLE_CALENDAR_TIMEZONE', 'America/Sao_Paulo'),
+        // Enquanto o app não passa pela verificação do Google, a tela de
+        // consentimento mostra um aviso; a página de ajuda explica como seguir.
+        'verified' => (bool) env('GOOGLE_APP_VERIFIED', false),
     ],
 
     'whatsapp' => [

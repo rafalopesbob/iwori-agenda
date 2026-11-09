@@ -17,12 +17,29 @@ class GoogleCalendarService
     protected const EVENTS_URL = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
 
     /**
+     * Único escopo pedido: ver e editar eventos. Não lê nem apaga agendas.
+     */
+    public const SCOPE = 'https://www.googleapis.com/auth/calendar.events';
+
+    /**
      * Credenciais do Google configuradas no ambiente?
      */
     public function isConfigured(): bool
     {
         return (bool) config('services.google.client_id')
             && (bool) config('services.google.client_secret');
+    }
+
+    /**
+     * Fuso em que os horários das sessões são digitados e gravados.
+     *
+     * O app roda em UTC, mas o scheduled_at guarda o horário de parede do
+     * consultório (14:00 digitado = 14:00 gravado). O Google precisa saber
+     * desse fuso para não deslocar o evento.
+     */
+    public function timezone(): string
+    {
+        return config('services.google.timezone') ?: 'America/Sao_Paulo';
     }
 
     /**
@@ -34,7 +51,7 @@ class GoogleCalendarService
             'client_id' => config('services.google.client_id'),
             'redirect_uri' => route('google.callback'),
             'response_type' => 'code',
-            'scope' => 'https://www.googleapis.com/auth/calendar.events',
+            'scope' => self::SCOPE,
             'access_type' => 'offline',
             'prompt' => 'consent',
             'state' => $state,
@@ -43,8 +60,12 @@ class GoogleCalendarService
 
     /**
      * Troca o código de autorização pelos tokens e os guarda no profissional.
+     *
+     * Na tela de consentimento o Google deixa a pessoa desmarcar a permissão
+     * da agenda. Sem ela nenhum evento seria criado, então a conexão é
+     * recusada (retorna false) e o token recebido é revogado.
      */
-    public function connect(User $user, string $code): void
+    public function connect(User $user, string $code): bool
     {
         $tokens = Http::asForm()->post(self::TOKEN_URL, [
             'client_id' => config('services.google.client_id'),
@@ -54,11 +75,20 @@ class GoogleCalendarService
             'redirect_uri' => route('google.callback'),
         ])->throw()->json();
 
+        // O Google devolve em "scope" o que foi de fato concedido.
+        if (isset($tokens['scope']) && ! in_array(self::SCOPE, explode(' ', $tokens['scope']), true)) {
+            Http::asForm()->post(self::REVOKE_URL, ['token' => $tokens['access_token']]);
+
+            return false;
+        }
+
         $user->forceFill([
             'google_access_token' => $tokens['access_token'],
             'google_refresh_token' => $tokens['refresh_token'] ?? $user->google_refresh_token,
             'google_token_expires_at' => now()->addSeconds($tokens['expires_in'] ?? 3600),
         ])->save();
+
+        return true;
     }
 
     /**
@@ -176,16 +206,21 @@ class GoogleCalendarService
      */
     protected function eventPayload(ClientSession $session): array
     {
+        // Horário de parede, sem offset, acompanhado do fuso do consultório.
+        // Mandar o offset do app (UTC) deslocaria o evento em 3 horas.
+        $format = 'Y-m-d\TH:i:s';
+
         return [
             'summary' => 'Sessão — '.$session->client->name,
-            'description' => 'Agendado pelo Iwori Agenda.',
+            // Sem anotações nem valores: o evento fica numa conta de terceiros.
+            'description' => "Agendado pelo Iwori Agenda.\nAbrir a sessão: ".route('sessions.edit', $session),
             'start' => [
-                'dateTime' => $session->scheduled_at->toRfc3339String(),
-                'timeZone' => config('app.timezone'),
+                'dateTime' => $session->scheduled_at->format($format),
+                'timeZone' => $this->timezone(),
             ],
             'end' => [
-                'dateTime' => $session->scheduled_at->addMinutes($session->duration_minutes)->toRfc3339String(),
-                'timeZone' => config('app.timezone'),
+                'dateTime' => $session->scheduled_at->addMinutes($session->duration_minutes)->format($format),
+                'timeZone' => $this->timezone(),
             ],
         ];
     }
