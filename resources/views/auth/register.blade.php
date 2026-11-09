@@ -52,6 +52,10 @@
         </button>
     </form>
 
+    @if ($googleLogin)
+        @include('auth._google-button', ['label' => 'Criar conta com Google'])
+    @endif
+
     <p class="mt-4 flex flex-wrap items-center justify-center gap-x-1 text-sm text-muted">
         Já tem conta?
         <a href="{{ route('login') }}" class="inline-flex items-center min-h-11 font-medium text-brand hover:underline">Entrar</a>

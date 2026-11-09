@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\EmailVerificationController;
+use App\Http\Controllers\Auth\GoogleLoginController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
@@ -31,6 +32,14 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store'])
         ->middleware('throttle:auth');
+
+    // Login com conta Google (o /google/callback é da integração com o Google Agenda).
+    // Desligado na demo, porque cria contas. O limite é por IP: o 'throttle:auth' usa
+    // o e-mail do formulário, que aqui não existe.
+    Route::middleware(['not-demo', 'throttle:20,1'])->group(function () {
+        Route::get('/login/google', [GoogleLoginController::class, 'redirect'])->name('login.google');
+        Route::get('/login/google/callback', [GoogleLoginController::class, 'callback'])->name('login.google.callback');
+    });
 
     // Esqueci minha senha (desligado na demo: a conta é compartilhada e nada é enviado).
     Route::middleware('not-demo')->group(function () {

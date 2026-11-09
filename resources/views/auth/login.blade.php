@@ -18,6 +18,12 @@
         </div>
     @endif
 
+    @error('google')
+        <div role="alert" class="mt-5 rounded-xl border border-danger/20 bg-danger-tint px-4 py-3 text-sm font-medium text-danger-ink">
+            {{ $message }}
+        </div>
+    @enderror
+
     @if (config('demo.enabled'))
         <div class="mt-6 rounded-2xl border border-accent/20 bg-accent-tint p-5">
             <p class="text-sm font-semibold text-accent-ink">Conheça com dados de exemplo</p>
@@ -65,6 +71,10 @@
             Entrar
         </button>
     </form>
+
+    @if ($googleLogin)
+        @include('auth._google-button', ['label' => 'Entrar com Google'])
+    @endif
 
     @unless (config('demo.enabled'))
         <p class="mt-4 flex flex-wrap items-center justify-center gap-x-1 text-sm text-muted">

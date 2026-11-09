@@ -80,15 +80,25 @@
             </div>
 
             {{-- Só aparece ao trocar o e-mail: a troca exige confirmar a senha atual. --}}
-            <div x-cloak x-show="email !== original">
-                <label for="email_current_password" class="block text-sm font-medium text-ink mb-1.5">Senha atual *</label>
-                <x-password-input id="email_current_password" name="email_current_password" autocomplete="current-password"
-                                  x-bind:required="email !== original" />
-                <p class="text-sm text-muted mt-1.5">Para trocar o e-mail da conta, confirme sua senha.</p>
-                @error('email_current_password')
-                    <p class="text-sm text-danger-ink mt-1.5">{{ $message }}</p>
-                @enderror
-            </div>
+            @if ($user->hasPassword())
+                <div x-cloak x-show="email !== original">
+                    <label for="email_current_password" class="block text-sm font-medium text-ink mb-1.5">Senha atual *</label>
+                    <x-password-input id="email_current_password" name="email_current_password" autocomplete="current-password"
+                                      x-bind:required="email !== original" />
+                    <p class="text-sm text-muted mt-1.5">Para trocar o e-mail da conta, confirme sua senha.</p>
+                    @error('email_current_password')
+                        <p class="text-sm text-danger-ink mt-1.5">{{ $message }}</p>
+                    @enderror
+                </div>
+            @else
+                {{-- Conta criada pelo Google ainda sem senha: não há o que confirmar.
+                     Com o erro de validação já na tela, a dica repetiria a mensagem. --}}
+                @unless ($errors->has('email'))
+                    <p x-cloak x-show="email !== original" class="text-sm text-muted">
+                        Para trocar o e-mail da conta, defina uma senha antes, em "Definir senha", logo abaixo.
+                    </p>
+                @endunless
+            @endif
 
             <div class="pt-2">
                 <button type="submit" class="inline-flex items-center justify-center gap-2 min-h-11 px-5 rounded-xl bg-brand hover:bg-brand-dark text-white text-sm font-semibold transition-colors">
@@ -98,21 +108,28 @@
         </form>
     </div>
 
-    {{-- Alterar senha --}}
+    {{-- Alterar senha (ou definir a primeira, para quem se cadastrou pelo Google) --}}
     <div class="bg-white rounded-2xl border border-line p-6 sm:p-8">
-        <h2 class="text-lg font-semibold tracking-tight text-ink mb-5">Alterar senha</h2>
+        @if ($user->hasPassword())
+            <h2 class="text-lg font-semibold tracking-tight text-ink mb-5">Alterar senha</h2>
+        @else
+            <h2 class="text-lg font-semibold tracking-tight text-ink">Definir senha</h2>
+            <p class="text-sm text-muted mt-1 mb-5">Você entra pelo Google. Se quiser, defina uma senha para entrar também com e-mail e senha.</p>
+        @endif
 
         <form method="POST" action="{{ route('profile.password') }}" class="space-y-5">
             @csrf
             @method('PUT')
 
-            <div>
-                <label for="current_password" class="block text-sm font-medium text-ink mb-1.5">Senha atual *</label>
-                <x-password-input id="current_password" name="current_password" required autocomplete="current-password" />
-                @error('current_password', 'password')
-                    <p class="text-sm text-danger-ink mt-1.5">{{ $message }}</p>
-                @enderror
-            </div>
+            @if ($user->hasPassword())
+                <div>
+                    <label for="current_password" class="block text-sm font-medium text-ink mb-1.5">Senha atual *</label>
+                    <x-password-input id="current_password" name="current_password" required autocomplete="current-password" />
+                    @error('current_password', 'password')
+                        <p class="text-sm text-danger-ink mt-1.5">{{ $message }}</p>
+                    @enderror
+                </div>
+            @endif
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -131,7 +148,7 @@
 
             <div class="pt-2">
                 <button type="submit" class="inline-flex items-center justify-center gap-2 min-h-11 px-5 rounded-xl bg-brand hover:bg-brand-dark text-white text-sm font-semibold transition-colors">
-                    Alterar senha
+                    {{ $user->hasPassword() ? 'Alterar senha' : 'Definir senha' }}
                 </button>
             </div>
         </form>

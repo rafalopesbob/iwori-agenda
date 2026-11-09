@@ -50,11 +50,17 @@ class ProfileController extends Controller
     }
 
     /**
-     * Altera a senha do profissional.
+     * Altera a senha do profissional, ou define a primeira senha de quem
+     * se cadastrou pelo Google.
      */
     public function updatePassword(UpdatePasswordRequest $request): RedirectResponse
     {
-        $request->user()->update([
+        $user = $request->user();
+        $status = $user->hasPassword()
+            ? 'Senha alterada com sucesso.'
+            : 'Senha definida. Agora você também pode entrar com e-mail e senha.';
+
+        $user->update([
             'password' => $request->validated('password'),
         ]);
 
@@ -62,7 +68,7 @@ class ProfileController extends Controller
         $request->session()->regenerate();
 
         return redirect()->route('profile.edit')
-            ->with('status', 'Senha alterada com sucesso.');
+            ->with('status', $status);
     }
 
     /**

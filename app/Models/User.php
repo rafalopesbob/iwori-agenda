@@ -12,10 +12,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Storage;
 
 #[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token', 'google_access_token', 'google_refresh_token'])]
+#[Hidden(['password', 'remember_token', 'google_id', 'google_access_token', 'google_refresh_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
@@ -57,6 +56,15 @@ class User extends Authenticatable implements MustVerifyEmail
             'google_refresh_token' => 'encrypted',
             'google_token_expires_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Indica se a conta tem senha. Quem se cadastrou pelo Google entra sem
+     * senha até definir uma no Perfil (ou por "Esqueci minha senha").
+     */
+    public function hasPassword(): bool
+    {
+        return $this->password !== null;
     }
 
     /**

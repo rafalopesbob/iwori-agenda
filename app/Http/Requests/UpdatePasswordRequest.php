@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 
@@ -23,14 +24,18 @@ class UpdatePasswordRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        return [
-            'current_password' => ['required', 'current_password'],
-            'password' => ['required', 'confirmed', Password::defaults()],
-        ];
+        $rules = ['password' => ['required', 'confirmed', Password::defaults()]];
+
+        // Quem se cadastrou pelo Google ainda não tem senha atual para confirmar.
+        if ($this->user()->hasPassword()) {
+            $rules = ['current_password' => ['required', 'current_password']] + $rules;
+        }
+
+        return $rules;
     }
 
     /**

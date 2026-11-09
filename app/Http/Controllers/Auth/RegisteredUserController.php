@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\GoogleLoginService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,9 +18,9 @@ class RegisteredUserController extends Controller
     /**
      * Exibe o formulário de registro.
      */
-    public function create(): View
+    public function create(GoogleLoginService $google): View
     {
-        return view('auth.register');
+        return view('auth.register', ['googleLogin' => $google->isAvailable()]);
     }
 
     /**

@@ -26,7 +26,7 @@ Render, TiDB Cloud e Brevo não pedem cartão de crédito no cadastro. O Cloudfl
 - **Fila:** driver `database`. Os jobs enviam e-mails de agendamento e cobrança, cobranças por WhatsApp e sincronização com o Google Calendar. **Precisa de um worker rodando.**
 - **Agendador:** `charges:dispatch` roda diariamente às **09:00 de Brasília** (`America/Sao_Paulo`, 12:00 UTC). O app em si roda em UTC (`config/app.php`).
 - **Arquivos enviados:** fotos de perfil e comprovantes de pagamento vão para o disco definido em `UPLOADS_DISK`. Os dois são privados e só saem por rotas que conferem o dono. No Render, `r2` (Cloudflare R2), porque o disco do contêiner some a cada reinício; num servidor com disco permanente (VPS com `compose.prod.yaml`), `local` basta.
-- **Integrações opcionais:** Google Calendar (OAuth 2.0, callback em `/google/callback`) e WhatsApp Cloud API (Meta).
+- **Integrações opcionais:** Google Calendar (OAuth 2.0, callback em `/google/callback`), login com Google (callback em `/login/google/callback`) e WhatsApp Cloud API (Meta).
 - **Health check:** `GET /up`, a rota nativa do Laravel.
 
 ## 2. O que foi ajustado no repositório
@@ -86,7 +86,7 @@ O serviço da demo pede o mesmo conjunto, com `DB_HOST`, `DB_USERNAME` e `DB_PAS
 
 | Variável | Uso |
 |---|---|
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Sincronização com o Google Calendar |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Sincronização com o Google Calendar e login com Google |
 | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID`, `WHATSAPP_TEMPLATE_CHARGE` | Cobrança por WhatsApp (template padrão `cobranca_iwori`) |
 | `WHATSAPP_API_VERSION` | Versão da Graph API da Meta (padrão `v25.0`). Troque quando a Meta anunciar o fim da versão em uso. |
 
@@ -164,6 +164,7 @@ Sem o R2, coloque `UPLOADS_DISK=local` no Render. O app funciona, mas fotos e co
 ### 4.6 Integrações (opcional)
 
 - **Google Agenda:** veja o passo a passo completo em [4.6.1](#461-google-agenda).
+- **Login com Google:** usa o mesmo client OAuth da Agenda; veja [4.6.2](#462-login-com-google).
 - **WhatsApp:** adicione `WHATSAPP_TOKEN` e `WHATSAPP_PHONE_ID` (o template padrão é `cobranca_iwori`). Só recebem por WhatsApp os clientes com celular válido e autorização marcada no cadastro. Se a Meta falhar, a mensagem é refeita sozinha até 3 vezes, sem reenviar o e-mail.
 
 #### 4.6.1 Google Agenda
@@ -207,6 +208,22 @@ A verificação pede domínio próprio (um `*.onrender.com` não serve), página
 - ao desconectar, os eventos já criados ficam na agenda do Google.
 
 Tudo passa pela fila, então o worker precisa estar ligado (no Render ele já está previsto).
+
+#### 4.6.2 Login com Google
+
+Com `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` preenchidos, aparecem os botões **Entrar com Google** (no login) e **Criar conta com Google** (no cadastro). O login usa o mesmo client OAuth da Agenda, mas pede só `openid`, `email` e `profile`: escopos não sensíveis, sem acesso à agenda. No ambiente de demonstração (`DEMO_MODE=true`) os botões não aparecem, porque lá ninguém cria conta.
+
+**No Google Cloud Console**, no client criado na [4.6.1](#461-google-agenda):
+
+1. **Clients → (client do app) → Authorized redirect URIs**: adicione `http://localhost/login/google/callback` (ambiente local) e `https://<sua-url>.onrender.com/login/google/callback` (produção). O `/google/callback` continua sendo só da Agenda.
+2. Confira o **Publishing status** em **Audience**. Ele é o mesmo da Agenda: em *Testing*, só os e-mails cadastrados em *Test users* conseguem entrar com Google. Para qualquer pessoa entrar, o app precisa estar *In production*.
+
+**Como as contas são tratadas:**
+- e-mail sem conta no Iwori: a conta é criada sem senha e já com o e-mail confirmado (o Google confirmou). Se quiser, a pessoa define uma senha em **Meu perfil → Definir senha** ou por **Esqueci minha senha**. Para trocar o e-mail da conta, ela precisa definir uma senha antes;
+- e-mail que já tem conta: o app pede a senha dessa conta uma vez e então vincula o Google. A conta funciona antes de o e-mail ser confirmado, então isso impede que quem cadastrou o e-mail de outra pessoa ganhe acesso quando a pessoa dona do e-mail entrar pelo Google;
+- conta já vinculada: entra direto, mesmo que o e-mail da conta Google tenha mudado.
+
+A migration `2026_11_09_120000_add_google_id_to_users_table` cria a coluna `google_id` e deixa a senha opcional. Ela roda no deploy junto com as demais (`RUN_MIGRATIONS=1`).
 
 ### 4.7 Acordar o app para a cobrança diária
 
