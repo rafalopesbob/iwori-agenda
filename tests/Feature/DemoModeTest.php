@@ -92,7 +92,7 @@ class DemoModeTest extends TestCase
         $this->assertAuthenticatedAs($demo);
         $this->assertTrue($demo->clients()->exists());
 
-        $this->get('/dashboard')->assertOk()->assertSee('Olá, Helena')->assertSee('Ambiente de demonstração');
+        $this->get('/dashboard')->assertOk()->assertSee('Olá, Kátia')->assertSee('Ambiente de demonstração');
     }
 
     public function test_entrada_rapida_usa_a_conta_existente_sem_recriar(): void

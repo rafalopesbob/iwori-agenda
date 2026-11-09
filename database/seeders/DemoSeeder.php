@@ -12,6 +12,7 @@ use App\Models\ClientSession;
 use App\Models\EmailTemplate;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -154,7 +155,7 @@ class DemoSeeder extends Seeder
         // Alinha séries quinzenais para caírem na semana atual.
         $first = $from->next($weekday === 7 ? 0 : $weekday)->subWeek();
         if ($every > 1) {
-            while ((int) $first->diffInWeeks($today->startOfWeek()->addDays($weekday - 1), true) % $every !== 0) {
+            while ((int) $first->diffInWeeks($today->startOfWeek(CarbonInterface::MONDAY)->addDays($weekday - 1), true) % $every !== 0) {
                 $first = $first->addWeek();
             }
         }
