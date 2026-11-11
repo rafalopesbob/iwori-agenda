@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\BillingChannel;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientRequest;
 use App\Models\Client;
@@ -18,12 +19,43 @@ class ClientController extends Controller
     {
         $this->authorize('viewAny', Client::class);
 
+        $search = trim((string) $request->query('q'));
+        $situation = in_array($request->query('situation'), ['active', 'inactive'], true)
+            ? (string) $request->query('situation')
+            : null;
+        $channel = BillingChannel::tryFrom((string) $request->query('channel'));
+
+        // Busca por nome, e-mail ou celular (o celular também só com os dígitos).
+        $digits = preg_replace('/\D+/', '', $search);
+
         $clients = $request->user()
             ->clients()
-            ->orderBy('name')
-            ->paginate(15);
+            ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search, $digits) {
+                $like = '%'.addcslashes($search, '%_\\').'%';
+                $query->where('name', 'like', $like)
+                    ->orWhere('email', 'like', $like)
+                    ->orWhere('phone', 'like', $like);
 
-        return view('clients.index', compact('clients'));
+                if (strlen($digits) >= 4) {
+                    $query->orWhereRaw(
+                        "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') like ?",
+                        ['%'.$digits.'%'],
+                    );
+                }
+            }))
+            ->when($situation, fn ($query) => $query->where('active', $situation === 'active'))
+            ->when($channel, fn ($query) => $query->where('billing_channel', $channel->value))
+            ->orderBy('name')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('clients.index', [
+            'clients' => $clients,
+            'search' => $search,
+            'situation' => $situation,
+            'channel' => $channel,
+            'filtered' => $search !== '' || $situation !== null || $channel !== null,
+        ]);
     }
 
     /**

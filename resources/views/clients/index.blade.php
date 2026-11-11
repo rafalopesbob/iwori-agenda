@@ -20,11 +20,48 @@
     </div>
 @endif
 
+{{-- Filtros --}}
+<form method="GET" action="{{ route('clients.index') }}" class="flex flex-wrap items-end gap-3 mb-6" role="search">
+    <div class="w-full sm:w-auto sm:min-w-72">
+        <label for="clients_q" class="block text-[13px] font-medium text-muted mb-1">Buscar</label>
+        <input id="clients_q" type="search" name="q" value="{{ $search }}" placeholder="Nome, e-mail ou celular"
+               class="w-full rounded-xl border border-line-strong bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-subtle focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/25">
+    </div>
+    <div class="w-[calc(50%-0.375rem)] sm:w-auto">
+        <label for="clients_situation" class="block text-[13px] font-medium text-muted mb-1">Situação</label>
+        <select id="clients_situation" name="situation" onchange="this.form.submit()"
+                class="w-full rounded-xl border border-line-strong bg-white px-3.5 py-2.5 text-[15px] text-ink focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/25">
+            <option value="">Todos</option>
+            <option value="active" @selected($situation === 'active')>Ativos</option>
+            <option value="inactive" @selected($situation === 'inactive')>Inativos</option>
+        </select>
+    </div>
+    <div class="w-[calc(50%-0.375rem)] sm:w-auto">
+        <label for="clients_channel" class="block text-[13px] font-medium text-muted mb-1">Cobrança por</label>
+        <select id="clients_channel" name="channel" onchange="this.form.submit()"
+                class="w-full rounded-xl border border-line-strong bg-white px-3.5 py-2.5 text-[15px] text-ink focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/25">
+            <option value="">Qualquer canal</option>
+            @foreach (App\Enums\BillingChannel::cases() as $option)
+                <option value="{{ $option->value }}" @selected($channel === $option)>{{ $option->label() }}</option>
+            @endforeach
+        </select>
+    </div>
+    <button type="submit" class="inline-flex items-center justify-center min-h-11 px-4 rounded-xl border border-line-strong bg-white text-ink hover:bg-canvas text-sm font-semibold transition-colors">Filtrar</button>
+    @if ($filtered)
+        <a href="{{ route('clients.index') }}" class="inline-flex items-center min-h-11 px-2 text-sm font-medium text-brand hover:underline">Limpar filtros</a>
+    @endif
+</form>
+
 <div class="bg-white rounded-2xl border border-line overflow-hidden">
     @if ($clients->isEmpty())
         <p class="p-10 text-center text-muted">
-            Nenhum cliente cadastrado ainda.
-            <a href="{{ route('clients.create') }}" class="font-medium text-brand hover:underline">Cadastre o primeiro</a>.
+            @if ($filtered)
+                Nenhum cliente encontrado com esses filtros.
+                <a href="{{ route('clients.index') }}" class="font-medium text-brand hover:underline">Ver todos</a>.
+            @else
+                Nenhum cliente cadastrado ainda.
+                <a href="{{ route('clients.create') }}" class="font-medium text-brand hover:underline">Cadastre o primeiro</a>.
+            @endif
         </p>
     @else
         <div class="overflow-x-auto">

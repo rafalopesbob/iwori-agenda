@@ -234,7 +234,7 @@ class DemoSeeder extends Seeder
                     'channel' => $client->billing_channel,
                     'sent_at' => $sentAt,
                     'paid_at' => $paid ? $sentAt->addDays(mt_rand(1, min(5, max(1, $daysAgo)))) : null,
-                ])->save();
+                ] + $this->emailSent($client, $sentAt))->save();
             }
 
             $client->forceFill(['last_charged_at' => $sentAt])->save();
@@ -296,6 +296,25 @@ class DemoSeeder extends Seeder
             'status' => ChargeStatus::Pending,
             'channel' => $session->client->billing_channel,
             'sent_at' => $session->scheduled_at->addHours(2),
-        ])->save();
+        ] + $this->emailSent($session->client, $session->scheduled_at->addHours(2)))->save();
+    }
+
+    /**
+     * Cobranças por e-mail da demonstração aparecem com o e-mail já enviado
+     * (situação "Enviado" e contador de e-mails em Cobranças).
+     *
+     * @return array<string, mixed>
+     */
+    protected function emailSent(Client $client, CarbonInterface $sentAt): array
+    {
+        if (! $client->billing_channel->sendsEmail()) {
+            return [];
+        }
+
+        return [
+            'emails_sent' => 1,
+            'email_queued_at' => $sentAt,
+            'email_sent_at' => $sentAt->copy()->addMinute(),
+        ];
     }
 }

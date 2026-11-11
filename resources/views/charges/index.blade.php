@@ -14,7 +14,7 @@
 @endif
 
 {{-- Totais --}}
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
     <div class="bg-white rounded-2xl border border-line p-5">
         <p class="text-sm font-medium text-muted">A receber (pendentes)</p>
         <p class="mt-2 text-[30px] leading-none font-semibold tracking-tight tabular-nums text-ink">R$ {{ number_format($totals['pending'], 2, ',', '.') }}</p>
@@ -23,15 +23,20 @@
         <p class="text-sm font-medium text-muted">Recebido neste mês</p>
         <p class="mt-2 text-[30px] leading-none font-semibold tracking-tight tabular-nums text-accent-ink">R$ {{ number_format($totals['paid_this_month'], 2, ',', '.') }}</p>
     </div>
+    <div class="bg-white rounded-2xl border border-line p-5">
+        <p class="text-sm font-medium text-muted">E-mails de cobrança enviados</p>
+        <p class="mt-2 text-[30px] leading-none font-semibold tracking-tight tabular-nums text-ink">{{ $totals['emails_sent'] }}</p>
+        <p class="mt-2 text-[13px] text-muted">Em {{ $emailsMonth->locale('pt_BR')->translatedFormat('F \d\e Y') }}, contando reenvios</p>
+    </div>
 </div>
 
 {{-- Filtros --}}
-<div class="flex flex-wrap items-center gap-3 mb-6">
-    <nav class="inline-flex rounded-xl bg-brand-tint p-1 gap-1" aria-label="Filtrar por situação">
-        @foreach ([null => 'Todas', 'pending' => 'Pendentes', 'paid' => 'Pagas'] as $value => $label)
-            {{-- A chave null do array vira '' no PHP; por isso o "Todas" compara com ''. --}}
-            @php($isActive = ($status?->value ?? '') === $value)
-            <a href="{{ route('charges.index', array_filter(['status' => $value, 'client' => $clientId])) }}"
+@php($statusFilters = ['' => 'Todas', 'pending' => 'Pendentes', 'overdue' => 'Atrasadas', 'paid' => 'Pagas'])
+<div class="flex flex-wrap items-end gap-3 mb-6">
+    <nav class="inline-flex flex-wrap rounded-xl bg-brand-tint p-1 gap-1" aria-label="Filtrar por situação">
+        @foreach ($statusFilters as $value => $label)
+            @php($isActive = ($status ?? '') === $value)
+            <a href="{{ route('charges.index', array_filter(['status' => $value, 'client' => $clientId, 'month' => $month?->format('Y-m'), 'email' => $email])) }}"
                @if ($isActive) aria-current="page" @endif
                class="inline-flex items-center min-h-9 px-4 rounded-lg text-sm font-semibold transition-colors {{ $isActive ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink' }}">
                 {{ $label }}
@@ -39,28 +44,51 @@
         @endforeach
     </nav>
 
-    <form method="GET" action="{{ route('charges.index') }}" class="flex flex-wrap items-center gap-2">
+    <form method="GET" action="{{ route('charges.index') }}" class="flex flex-wrap items-end gap-2" role="search">
         @if ($status)
-            <input type="hidden" name="status" value="{{ $status->value }}">
+            <input type="hidden" name="status" value="{{ $status }}">
         @endif
-        <select name="client" onchange="this.form.submit()" aria-label="Filtrar por cliente"
-                class="rounded-xl border border-line-strong bg-white px-3.5 py-2.5 text-[15px] text-ink focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/25">
-            <option value="">Todos os clientes</option>
-            @foreach ($clients as $client)
-                <option value="{{ $client->id }}" @selected($clientId === $client->id)>{{ $client->name }}</option>
-            @endforeach
-        </select>
-        @if ($status || $clientId)
+        <div>
+            <label for="charges_client" class="block text-[13px] font-medium text-muted mb-1">Cliente</label>
+            <select id="charges_client" name="client" onchange="this.form.submit()"
+                    class="rounded-xl border border-line-strong bg-white px-3.5 py-2.5 text-[15px] text-ink focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/25">
+                <option value="">Todos os clientes</option>
+                @foreach ($clients as $client)
+                    <option value="{{ $client->id }}" @selected($clientId === $client->id)>{{ $client->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label for="charges_month" class="block text-[13px] font-medium text-muted mb-1">Enviada em</label>
+            <input id="charges_month" type="month" name="month" value="{{ $month?->format('Y-m') }}" onchange="this.form.submit()"
+                   class="rounded-xl border border-line-strong bg-white px-3.5 py-2 text-[15px] text-ink focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/25">
+        </div>
+        <div>
+            <label for="charges_email" class="block text-[13px] font-medium text-muted mb-1">E-mail</label>
+            <select id="charges_email" name="email" onchange="this.form.submit()"
+                    class="rounded-xl border border-line-strong bg-white px-3.5 py-2.5 text-[15px] text-ink focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/25">
+                <option value="">Qualquer situação</option>
+                <option value="sent" @selected($email === 'sent')>Enviado</option>
+                <option value="queued" @selected($email === 'queued')>Na fila</option>
+                <option value="failed" @selected($email === 'failed')>Falhou</option>
+            </select>
+        </div>
+        <noscript><button type="submit" class="min-h-11 px-4 rounded-xl border border-line-strong bg-white text-sm font-semibold">Filtrar</button></noscript>
+        @if ($filtered)
             <a href="{{ route('charges.index') }}"
-               class="inline-flex items-center min-h-11 px-2 text-sm font-medium text-brand hover:underline">Limpar</a>
+               class="inline-flex items-center min-h-11 px-2 text-sm font-medium text-brand hover:underline">Limpar filtros</a>
         @endif
     </form>
 </div>
 
 @if ($charges->isEmpty())
     <div class="bg-white rounded-2xl border border-line p-10 text-center text-muted">
-        Nenhuma cobrança por aqui ainda. Elas aparecem automaticamente quando o ciclo
-        de um cliente fecha ou quando você dispara uma cobrança no Faturamento.
+        @if ($filtered)
+            Nenhuma cobrança encontrada com esses filtros.
+        @else
+            Nenhuma cobrança por aqui ainda. Elas aparecem automaticamente quando o ciclo
+            de um cliente fecha ou quando você dispara uma cobrança no Faturamento.
+        @endif
     </div>
 @else
     <div class="bg-white rounded-2xl border border-line overflow-hidden">
@@ -72,6 +100,7 @@
                         <th class="px-5 py-3 font-medium border-b border-line">Período</th>
                         <th class="px-5 py-3 font-medium border-b border-line text-right">Valor</th>
                         <th class="px-5 py-3 font-medium border-b border-line">Enviada em</th>
+                        <th class="px-5 py-3 font-medium border-b border-line">E-mail</th>
                         <th class="px-5 py-3 font-medium border-b border-line">Situação</th>
                         <th class="px-5 py-3 font-medium border-b border-line text-right">Ações</th>
                     </tr>
@@ -96,6 +125,26 @@
                             </td>
                             <td class="px-5 py-3.5 text-muted tabular-nums whitespace-nowrap">
                                 {{ $charge->sent_at?->format('d/m/Y H:i') ?? '—' }}
+                            </td>
+                            <td class="px-5 py-3.5 whitespace-nowrap">
+                                @switch($charge->emailStatus())
+                                    @case('sent')
+                                        <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-accent-tint text-accent-ink">Enviado</span>
+                                        <span class="block text-[13px] text-muted mt-1 tabular-nums">
+                                            {{ $charge->email_sent_at->format('d/m H:i') }}@if ($charge->emails_sent > 1) · {{ $charge->emails_sent }} envios @endif
+                                        </span>
+                                        @break
+                                    @case('queued')
+                                        <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-neutral-tint text-muted"
+                                              title="O e-mail está na fila e sai em instantes">Na fila</span>
+                                        @break
+                                    @case('failed')
+                                        <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-danger-tint text-danger-ink"
+                                              title="O servidor de e-mail recusou ou não respondeu. Confira o e-mail do cliente e cobre de novo.">Falhou</span>
+                                        @break
+                                    @default
+                                        <span class="text-[13px] text-muted">{{ $charge->channel === App\Enums\BillingChannel::Whatsapp ? 'Pelo WhatsApp' : '—' }}</span>
+                                @endswitch
                             </td>
                             <td class="px-5 py-3.5">
                                 <div class="flex flex-wrap items-center gap-1.5">

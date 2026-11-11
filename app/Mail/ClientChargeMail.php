@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Enums\EmailTemplateType;
 use App\Models\Client;
 use App\Models\ClientSession;
+use App\Services\ChargeEmailTracker;
 use App\Services\EmailTemplateService;
 use Carbon\CarbonInterface;
 use Illuminate\Bus\Queueable;
@@ -15,6 +16,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Collection;
+use Throwable;
 
 class ClientChargeMail extends Mailable implements ShouldQueue
 {
@@ -31,6 +33,8 @@ class ClientChargeMail extends Mailable implements ShouldQueue
      * do template do profissional, com fallback para o padrão do sistema.
      *
      * @param  Collection<int, ClientSession>  $sessions
+     * @param  int|null  $chargeId  Cobrança registrada; com ela, o envio e a falha
+     *                              ficam marcados na cobrança (ChargeEmailTracker).
      */
     public function __construct(
         public Client $client,
@@ -38,6 +42,7 @@ class ClientChargeMail extends Mailable implements ShouldQueue
         public float $total,
         public CarbonInterface $start,
         public CarbonInterface $end,
+        public ?int $chargeId = null,
     ) {
         $templates = app(EmailTemplateService::class);
 
@@ -79,5 +84,15 @@ class ClientChargeMail extends Mailable implements ShouldQueue
                 'professionalName' => $this->client->user->name,
             ],
         );
+    }
+
+    /**
+     * Chamado pela fila quando todas as tentativas de envio falharam.
+     */
+    public function failed(Throwable $exception): void
+    {
+        if ($this->chargeId) {
+            app(ChargeEmailTracker::class)->failed($this->chargeId);
+        }
     }
 }

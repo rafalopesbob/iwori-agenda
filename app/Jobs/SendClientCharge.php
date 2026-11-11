@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Mail\ClientChargeMail;
 use App\Models\Client;
 use App\Services\BillingService;
+use App\Services\ChargeEmailTracker;
 use App\Services\WhatsAppService;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -46,11 +47,13 @@ class SendClientCharge implements ShouldQueue
             // Registro persistente primeiro (com idempotência por período,
             // para retry do job ou re-disparo manual não duplicarem a cobrança);
             // efeitos externos só depois do commit.
-            $billing->recordPeriodCharge($client, $start, $end, $charge['total'], $delivery ?? $client->billing_channel);
+            $record = $billing->recordPeriodCharge($client, $start, $end, $charge['total'], $delivery ?? $client->billing_channel);
 
             if ($delivery?->sendsEmail()) {
+                app(ChargeEmailTracker::class)->queued($record);
+
                 Mail::to($client->email)->queue(
-                    new ClientChargeMail($client, $charge['sessions'], $charge['total'], $start, $end),
+                    new ClientChargeMail($client, $charge['sessions'], $charge['total'], $start, $end, $record->id),
                 );
             }
 

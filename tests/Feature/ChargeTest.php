@@ -472,6 +472,7 @@ class ChargeTest extends TestCase
 
         $user = User::factory()->create();
         $client = Client::factory()->for($user)->create();
+        ClientSession::factory()->for($client)->completed()->create(['scheduled_at' => now()->subDays(2)]);
 
         $this->actingAs($user)->post("/billing/{$client->id}/charge")->assertRedirect();
 

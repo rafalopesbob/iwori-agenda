@@ -35,9 +35,10 @@ class BillingService
     {
         $reference = $this->calendar->resolveMonth($month);
 
+        // Cliente completo: a tela usa o ciclo e os contatos para a prévia da cobrança.
         $sessions = ClientSession::query()
             ->whereHas('client', fn ($query) => $query->withoutTrashed()->where('user_id', $user->id))
-            ->with('client:id,name,billing_channel,phone')
+            ->with('client')
             ->scheduledBetween($reference, $reference->endOfMonth())
             ->get();
 
@@ -62,13 +63,54 @@ class BillingService
         return [
             'month' => $reference,
             'rows' => $rows,
-            'totals' => [
-                'completed' => $rows->sum('completed'),
-                'no_show' => $rows->sum('no_show'),
-                'no_show_excused' => $rows->sum('no_show_excused'),
-                'total' => (float) $rows->sum('total'),
-            ],
+            'totals' => $this->totals($rows),
         ];
+    }
+
+    /**
+     * Totais das linhas do fechamento (todas ou só as filtradas).
+     *
+     * @param  Collection<int, array<string, mixed>>  $rows
+     * @return array{completed: int, no_show: int, no_show_excused: int, total: float}
+     */
+    public function totals(Collection $rows): array
+    {
+        return [
+            'completed' => $rows->sum('completed'),
+            'no_show' => $rows->sum('no_show'),
+            'no_show_excused' => $rows->sum('no_show_excused'),
+            'total' => (float) $rows->sum('total'),
+        ];
+    }
+
+    /**
+     * O que o botão Cobrar vai cobrar agora: o período desde a última
+     * cobrança (não o mês da tela), o valor e por onde a cobrança sai.
+     *
+     * @return array{start: CarbonImmutable, end: CarbonImmutable, total: float, sessions: int, delivery: ?BillingChannel}
+     */
+    public function chargePreview(Client $client, bool $whatsappEnabled): array
+    {
+        ['start' => $start, 'end' => $end] = $client->currentChargePeriod();
+        $period = $this->periodCharge($client, $start, $end);
+
+        return [
+            'start' => $start,
+            'end' => $end,
+            'total' => $period['total'],
+            'sessions' => $period['sessions']->count(),
+            'delivery' => $client->chargeDeliveryChannel($whatsappEnabled),
+        ];
+    }
+
+    /**
+     * E-mails de cobrança que saíram de fato no intervalo (inclui reenvios).
+     */
+    public function chargeEmailsSent(User $user, CarbonInterface $from, CarbonInterface $to): int
+    {
+        return (int) $user->charges()
+            ->whereBetween('email_sent_at', [$from, $to])
+            ->sum('emails_sent');
     }
 
     /**

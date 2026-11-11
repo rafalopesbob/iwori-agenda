@@ -2,11 +2,14 @@
 
 namespace App\Providers;
 
+use App\Services\ChargeEmailTracker;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -110,5 +113,8 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('messages', function (Request $request) {
             return Limit::perHour(60)->by($request->user()?->id.'|'.$request->route()?->getName());
         });
+
+        // Marca na cobrança quando o e-mail dela sai de fato (contador e situação do envio).
+        Event::listen(MessageSent::class, [ChargeEmailTracker::class, 'sent']);
     }
 }

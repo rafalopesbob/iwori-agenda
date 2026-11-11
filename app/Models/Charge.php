@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\BillingChannel;
 use App\Enums\ChargeStatus;
+use Database\Factories\ChargeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['period_start', 'period_end', 'amount', 'status', 'channel', 'sent_at', 'notes'])]
 class Charge extends Model
 {
-    /** @use HasFactory<\Database\Factories\ChargeFactory> */
+    /** @use HasFactory<ChargeFactory> */
     use HasFactory;
 
     /**
@@ -39,6 +40,10 @@ class Charge extends Model
             'sent_at' => 'datetime',
             'paid_at' => 'datetime',
             'notes' => 'encrypted',
+            'emails_sent' => 'integer',
+            'email_queued_at' => 'datetime',
+            'email_sent_at' => 'datetime',
+            'email_failed_at' => 'datetime',
         ];
     }
 
@@ -50,6 +55,31 @@ class Charge extends Model
         return $this->status === ChargeStatus::Pending
             && $this->sent_at !== null
             && $this->sent_at->lt(now()->subDays(self::OVERDUE_AFTER_DAYS));
+    }
+
+    /**
+     * Situação do último e-mail desta cobrança: 'sent' (saiu), 'queued'
+     * (na fila), 'failed' (falhou) ou null quando nenhum e-mail foi para a
+     * fila (cobrança só por WhatsApp, cliente sem e-mail ou anterior ao
+     * acompanhamento de envio).
+     */
+    public function emailStatus(): ?string
+    {
+        return match (true) {
+            $this->email_queued_at === null => null,
+            $this->email_failed_at !== null => 'failed',
+            $this->email_sent_at !== null && $this->email_sent_at->gte($this->email_queued_at) => 'sent',
+            default => 'queued',
+        };
+    }
+
+    /**
+     * Pendentes há mais de OVERDUE_AFTER_DAYS dias (mesma regra de isOverdue).
+     */
+    public function scopeOverdue(Builder $query): Builder
+    {
+        return $query->where('status', ChargeStatus::Pending->value)
+            ->where('sent_at', '<', now()->subDays(self::OVERDUE_AFTER_DAYS));
     }
 
     /**

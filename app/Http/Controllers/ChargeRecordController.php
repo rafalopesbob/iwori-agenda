@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Enums\ChargeStatus;
 use App\Http\Requests\ConfirmChargePaymentRequest;
 use App\Models\Charge;
+use App\Services\BillingService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -20,35 +22,61 @@ class ChargeRecordController extends Controller
     /**
      * Lista as cobranças do profissional, com filtros por situação e cliente.
      */
-    public function index(Request $request): View
+    public function index(Request $request, BillingService $billing): View
     {
         $this->authorize('viewAny', Charge::class);
 
-        $status = ChargeStatus::tryFrom((string) $request->query('status'));
+        // Situação: pendentes, atrasadas (pendentes há mais de 7 dias) ou pagas.
+        $status = in_array($request->query('status'), ['pending', 'overdue', 'paid'], true)
+            ? (string) $request->query('status')
+            : null;
         $clientId = $request->integer('client');
+        // Mês em que a cobrança foi enviada (AAAA-MM).
+        $month = preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', (string) $request->query('month'))
+            ? CarbonImmutable::createFromFormat('!Y-m', (string) $request->query('month'))
+            : null;
+        // Situação do e-mail: saiu, na fila ou falhou.
+        $email = in_array($request->query('email'), ['sent', 'queued', 'failed'], true)
+            ? (string) $request->query('email')
+            : null;
 
         $charges = $request->user()
             ->charges()
             ->with('client')
-            ->when($status, fn ($query) => $query->where('status', $status->value))
+            ->when($status === 'pending', fn ($query) => $query->pending())
+            ->when($status === 'overdue', fn ($query) => $query->overdue())
+            ->when($status === 'paid', fn ($query) => $query->paid())
             ->when($clientId, fn ($query) => $query->where('client_id', $clientId))
+            ->when($month, fn ($query) => $query->whereBetween('sent_at', [$month->startOfMonth(), $month->endOfMonth()]))
+            ->when($email === 'failed', fn ($query) => $query->whereNotNull('email_failed_at'))
+            ->when($email === 'sent', fn ($query) => $query->whereNull('email_failed_at')
+                ->whereNotNull('email_sent_at')->whereColumn('email_sent_at', '>=', 'email_queued_at'))
+            ->when($email === 'queued', fn ($query) => $query->whereNull('email_failed_at')->whereNotNull('email_queued_at')
+                ->where(fn ($q) => $q->whereNull('email_sent_at')->orWhereColumn('email_sent_at', '<', 'email_queued_at')))
             ->latest('sent_at')
             ->paginate(15)
             ->withQueryString();
+
+        $emailsMonth = $month ?? CarbonImmutable::now()->startOfMonth();
 
         $totals = [
             'pending' => (float) $request->user()->charges()->pending()->sum('amount'),
             'paid_this_month' => (float) $request->user()->charges()->paid()
                 ->whereBetween('paid_at', [now()->startOfMonth(), now()->endOfMonth()])
                 ->sum('amount'),
+            'emails_sent' => $billing->chargeEmailsSent($request->user(), $emailsMonth->startOfMonth(), $emailsMonth->endOfMonth()),
         ];
 
         return view('charges.index', [
             'charges' => $charges,
             'totals' => $totals,
+            'emailsMonth' => $emailsMonth,
             'status' => $status,
             'clients' => $request->user()->clients()->orderBy('name')->get(['id', 'name']),
             'clientId' => $clientId,
+            'month' => $month,
+            'email' => $email,
+            'filtered' => $status !== null || $clientId || $month !== null || $email !== null,
         ]);
     }
 
