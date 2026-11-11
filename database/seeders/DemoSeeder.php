@@ -12,6 +12,7 @@ use App\Models\ClientSession;
 use App\Models\EmailTemplate;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -22,15 +23,16 @@ use Illuminate\Support\Str;
  *
  * Uso: php artisan db:seed --class=DemoSeeder
  * Pode rodar de novo: a conta de demonstração é recriada do zero.
- * Login: helena.rocha@example.com, com a senha padrão da UserFactory.
+ * Login: katia.andrade@example.com, com a senha padrão da UserFactory.
  */
 class DemoSeeder extends Seeder
 {
-    public const EMAIL = 'helena.rocha@example.com';
+    public const EMAIL = 'katia.andrade@example.com';
 
     /**
      * Agenda semanal de cada cliente: [nome, valor, ciclo, dia/intervalo, canal,
-     * dia da semana (1 = segunda), horário, duração, a cada N semanas, ativo].
+     * dia da semana (1 = segunda, numa semana em que hoje é quinta), horário,
+     * duração, a cada N semanas, ativo]. Veja weekdayFor().
      */
     protected const CLIENTS = [
         ['Ana Beatriz Souza', 200, 'weekly', null, 'email', 4, '08:00', 50, 1, true],
@@ -82,7 +84,7 @@ class DemoSeeder extends Seeder
         User::where('email', self::EMAIL)->delete();
 
         $user = User::factory()->create([
-            'name' => 'Helena Rocha',
+            'name' => 'Kátia Andrade',
             'email' => self::EMAIL,
         ]);
 
@@ -110,6 +112,7 @@ class DemoSeeder extends Seeder
 
             // Clientes inativos encerraram o acompanhamento no fim do primeiro mês.
             $lastDay = $active ? $until : $from->endOfMonth();
+            $weekday = $this->weekdayFor($weekday, $today->dayOfWeekIso);
             $sessions = $this->seedSessions($client, $from, $lastDay, $today, $weekday, $time, $duration, $every);
 
             $this->seedCharges($client, $sessions, $today, $from);
@@ -125,6 +128,21 @@ class DemoSeeder extends Seeder
     }
 
     /**
+     * A agenda foi desenhada com a quinta-feira como o dia mais cheio. Gira os
+     * dias para que esse dia caia sempre em hoje, e o painel abra com sessões
+     * em qualquer dia da apresentação. Em dia útil, gira só de segunda a
+     * sexta (o sábado fica no sábado); no fim de semana, gira a semana toda.
+     */
+    protected function weekdayFor(int $weekday, int $todayIso): int
+    {
+        if ($todayIso <= 5) {
+            return $weekday > 5 ? $weekday : (($weekday - 4 + $todayIso - 1) % 5 + 5) % 5 + 1;
+        }
+
+        return (($weekday - 4 + $todayIso - 1) % 7 + 7) % 7 + 1;
+    }
+
+    /**
      * Sessões recorrentes do cliente no intervalo, com presenças sorteadas no passado.
      *
      * @return Collection<int, ClientSession>
@@ -137,7 +155,7 @@ class DemoSeeder extends Seeder
         // Alinha séries quinzenais para caírem na semana atual.
         $first = $from->next($weekday === 7 ? 0 : $weekday)->subWeek();
         if ($every > 1) {
-            while ((int) $first->diffInWeeks($today->startOfWeek()->addDays($weekday - 1), true) % $every !== 0) {
+            while ((int) $first->diffInWeeks($today->startOfWeek(CarbonInterface::MONDAY)->addDays($weekday - 1), true) % $every !== 0) {
                 $first = $first->addWeek();
             }
         }

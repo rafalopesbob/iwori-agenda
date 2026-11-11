@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Enums\BillingChannel;
 use App\Jobs\SendClientCharge;
 use App\Jobs\SendSessionCharge;
 use App\Jobs\SendWhatsappMessage;
 use App\Mail\ClientChargeMail;
+use App\Models\Charge;
 use App\Models\Client;
 use App\Models\ClientSession;
 use App\Models\User;
@@ -217,10 +219,73 @@ class ChargeTest extends TestCase
         Http::assertSentCount(1);
     }
 
-    public function test_whatsapp_sem_credenciais_fica_dormente(): void
+    public function test_whatsapp_sem_credenciais_cobra_por_email(): void
     {
         Mail::fake();
         Http::fake();
+
+        $client = Client::factory()->channelWhatsapp()->create([
+            'email' => 'cliente@teste.com',
+            'phone' => '(11) 98765-4321',
+        ]);
+        ClientSession::factory()->for($client)->completed()->create([
+            'scheduled_at' => now()->subDays(3), 'value' => 180,
+        ]);
+
+        (new SendClientCharge($client))->handle(app(BillingService::class), app(WhatsAppService::class));
+
+        Http::assertNothingSent();
+        // Com o WhatsApp desligado, o cliente não fica sem aviso.
+        Mail::assertQueued(ClientChargeMail::class, fn (ClientChargeMail $mail) => $mail->hasTo('cliente@teste.com'));
+        $this->assertSame(BillingChannel::Email, Charge::where('client_id', $client->id)->first()->channel);
+        $this->assertNotNull($client->fresh()->last_charged_at);
+    }
+
+    public function test_whatsapp_sem_autorizacao_do_cliente_cobra_por_email(): void
+    {
+        $this->withWhatsappConfigured();
+        Mail::fake();
+        Http::fake();
+
+        $client = Client::factory()->channelWhatsapp()->withoutWhatsappOptIn()->create([
+            'email' => 'cliente@teste.com',
+            'phone' => '(11) 98765-4321',
+        ]);
+        ClientSession::factory()->for($client)->completed()->create([
+            'scheduled_at' => now()->subDays(3), 'value' => 180,
+        ]);
+
+        (new SendClientCharge($client))->handle(app(BillingService::class), app(WhatsAppService::class));
+
+        Http::assertNothingSent();
+        Mail::assertQueued(ClientChargeMail::class, fn (ClientChargeMail $mail) => $mail->hasTo('cliente@teste.com'));
+        $this->assertNotNull($client->fresh()->last_charged_at);
+    }
+
+    public function test_whatsapp_desligado_e_sem_email_registra_sem_enviar(): void
+    {
+        Mail::fake();
+        Http::fake();
+
+        $client = Client::factory()->channelWhatsapp()->create(['email' => null, 'phone' => '(11) 98765-4321']);
+        ClientSession::factory()->for($client)->completed()->create([
+            'scheduled_at' => now()->subDays(3), 'value' => 180,
+        ]);
+
+        (new SendClientCharge($client))->handle(app(BillingService::class), app(WhatsAppService::class));
+
+        Http::assertNothingSent();
+        Mail::assertNothingQueued();
+        // O período fecha mesmo assim: a cobrança fica registrada para acompanhar na tela.
+        $this->assertSame(1, Charge::where('client_id', $client->id)->count());
+        $this->assertNotNull($client->fresh()->last_charged_at);
+    }
+
+    public function test_cobranca_registra_o_canal_usado_de_fato(): void
+    {
+        $this->withWhatsappConfigured();
+        Mail::fake();
+        Queue::fake();
 
         $client = Client::factory()->channelWhatsapp()->create(['phone' => '(11) 98765-4321']);
         ClientSession::factory()->for($client)->completed()->create([
@@ -229,26 +294,9 @@ class ChargeTest extends TestCase
 
         (new SendClientCharge($client))->handle(app(BillingService::class), app(WhatsAppService::class));
 
-        Http::assertNothingSent();
-        $this->assertNotNull($client->fresh()->last_charged_at);
-    }
-
-    public function test_whatsapp_sem_autorizacao_do_cliente_nao_envia(): void
-    {
-        $this->withWhatsappConfigured();
-        Mail::fake();
-        Http::fake();
-
-        $client = Client::factory()->channelWhatsapp()->withoutWhatsappOptIn()->create(['phone' => '(11) 98765-4321']);
-        ClientSession::factory()->for($client)->completed()->create([
-            'scheduled_at' => now()->subDays(3), 'value' => 180,
-        ]);
-
-        (new SendClientCharge($client))->handle(app(BillingService::class), app(WhatsAppService::class));
-
-        Http::assertNothingSent();
-        // O período fecha mesmo assim: a cobrança fica registrada para envio manual.
-        $this->assertNotNull($client->fresh()->last_charged_at);
+        Mail::assertNotQueued(ClientChargeMail::class);
+        Queue::assertPushed(SendWhatsappMessage::class);
+        $this->assertSame(BillingChannel::Whatsapp, Charge::where('client_id', $client->id)->first()->channel);
     }
 
     public function test_falha_no_whatsapp_nao_reenvia_o_email(): void
@@ -313,6 +361,44 @@ class ChargeTest extends TestCase
         Mail::assertNotQueued(ClientChargeMail::class);
         Queue::assertPushed(SendWhatsappMessage::class, fn (SendWhatsappMessage $job) => $job->to === '5521998765432'
             && $job->params[1] === 'R$ 175,00');
+    }
+
+    public function test_cobranca_avulsa_com_whatsapp_desligado_vai_por_email(): void
+    {
+        Mail::fake();
+        Queue::fake();
+
+        $client = Client::factory()->channelWhatsapp()->create([
+            'email' => 'cliente@teste.com',
+            'phone' => '(21) 99876-5432',
+        ]);
+        $session = ClientSession::factory()->for($client)->completed()->create(['value' => 175]);
+
+        (new SendSessionCharge($session))->handle(app(WhatsAppService::class));
+
+        Queue::assertNotPushed(SendWhatsappMessage::class);
+        Mail::assertQueued(ClientChargeMail::class, fn (ClientChargeMail $mail) => $mail->hasTo('cliente@teste.com')
+            && $mail->total === 175.0);
+        $this->assertSame(BillingChannel::Email, Charge::where('client_id', $client->id)->first()->channel);
+    }
+
+    public function test_status_do_whatsapp_aparece_no_menu_e_no_cadastro(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Ainda não ativado. Até lá, as cobranças vão por e-mail.');
+        $this->actingAs($user)->get(route('clients.create'))
+            ->assertSee('O envio por WhatsApp ainda não está ativo.');
+
+        $this->withWhatsappConfigured();
+
+        $this->actingAs($user)->get(route('dashboard'))
+            ->assertSee('Ativo. Cobranças saem pelo WhatsApp para quem autorizou.')
+            ->assertDontSee('Ainda não ativado.');
+        $this->actingAs($user)->get(route('clients.create'))
+            ->assertDontSee('O envio por WhatsApp ainda não está ativo.');
     }
 
     public function test_periodo_sem_valor_nao_envia_nada(): void

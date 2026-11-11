@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\ClientSession;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Database\Seeders\DemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -54,6 +56,23 @@ class DemoSeederTest extends TestCase
         $this->assertTrue($user->charges()->pending()->get()->contains->isOverdue());
     }
 
+    public function test_dia_mais_cheio_cai_sempre_no_dia_da_apresentacao(): void
+    {
+        // Segunda, quinta, sábado e domingo.
+        foreach (['2026-11-09', '2026-11-12', '2026-11-14', '2026-11-15'] as $date) {
+            $this->travelTo(CarbonImmutable::parse($date.' 07:00'));
+            $this->seed(DemoSeeder::class);
+
+            $user = User::where('email', DemoSeeder::EMAIL)->first();
+            $todaySessions = ClientSession::query()
+                ->whereHas('client', fn ($query) => $query->where('user_id', $user->id))
+                ->whereDate('scheduled_at', today())
+                ->count();
+
+            $this->assertSame(5, $todaySessions, "Sessões de hoje em {$date}");
+        }
+    }
+
     public function test_conta_de_demonstracao_abre_o_painel_com_dados(): void
     {
         $this->withoutVite();
@@ -63,7 +82,7 @@ class DemoSeederTest extends TestCase
         $this->actingAs(User::where('email', DemoSeeder::EMAIL)->first())
             ->get('/dashboard')
             ->assertOk()
-            ->assertSee('Olá, Helena')
+            ->assertSee('Olá, Kátia')
             ->assertSee('Ana Beatriz Souza')
             ->assertDontSee('Nenhuma sessão agendada para hoje.');
     }

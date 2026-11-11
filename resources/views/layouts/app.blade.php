@@ -22,6 +22,7 @@
         $initial = mb_strtoupper(mb_substr($user->name, 0, 1));
         // "Mais" fica ativo no celular quando a página atual só existe nesse menu.
         $moreActive = request()->routeIs('billing.*', 'email-templates.*', 'profile.*');
+        $whatsappOn = app(App\Services\WhatsAppService::class)->isConfigured();
     @endphp
 
     {{-- Barra superior (celular) --}}
@@ -104,6 +105,17 @@
                     </div>
                 </div>
             @endif
+
+            {{-- O WhatsApp é ligado no servidor (credenciais da Meta), não por profissional. --}}
+            <div class="rounded-2xl border border-line p-3.5 flex gap-2.5 items-start">
+                <span class="mt-1.5 size-2 rounded-full shrink-0 {{ $whatsappOn ? 'bg-accent' : 'bg-line-strong' }}"></span>
+                <div class="min-w-0">
+                    <p class="text-sm font-semibold">WhatsApp</p>
+                    <p class="text-[13px] leading-snug text-muted mt-0.5">
+                        {{ $whatsappOn ? 'Ativo. Cobranças saem pelo WhatsApp para quem autorizou.' : 'Ainda não ativado. Até lá, as cobranças vão por e-mail.' }}
+                    </p>
+                </div>
+            </div>
 
             <div class="flex items-center gap-2">
                 <a href="{{ route('profile.edit') }}" title="Meu perfil"

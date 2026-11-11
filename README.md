@@ -89,7 +89,7 @@ Pronto! A aplicação estará disponível em [http://localhost](http://localhost
 
 > 🔒 **Nota de segurança:** por padrão, as portas da aplicação, do MySQL e do Mailpit ficam vinculadas a `127.0.0.1` — os serviços não são expostos à sua rede local.
 
-**Dados de demonstração** (para apresentações): cria a conta fictícia `helena.rocha@example.com`, com a senha padrão da `UserFactory`, já com clientes, agenda, presenças e cobranças coerentes com a data de hoje. Pode rodar de novo a qualquer momento: a conta é recriada do zero.
+**Dados de demonstração** (para apresentações): cria a conta fictícia `katia.andrade@example.com`, com a senha padrão da `UserFactory`, já com clientes, agenda, presenças e cobranças coerentes com a data de hoje. Pode rodar de novo a qualquer momento: a conta é recriada do zero.
 ```bash
 ./vendor/bin/sail artisan demo:reset
 ```

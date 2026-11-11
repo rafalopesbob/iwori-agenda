@@ -295,7 +295,7 @@ Para rodar os testes num TiDB local, igual ao da nuvem: `docker run -d -p 127.0.
 
 O `render.yaml` tem um segundo serviço, `iwori-agenda-demo`. Ele roda o mesmo código com `DEMO_MODE=true` e banco próprio:
 
-- **Login com um clique:** a tela de login ganha o botão **Entrar na demonstração**, que abre a conta fictícia da Helena Rocha sem expor senha.
+- **Login com um clique:** a tela de login ganha o botão **Entrar na demonstração**, que abre a conta fictícia da Kátia Andrade sem expor senha.
 - **Dados sempre atuais:** o `DemoSeeder` recria a conta a cada início do contêiner (cada deploy e cada vez que o serviço acorda) e todo dia às 04:00 de Brasília (`DEMO_RESET_AT`). Agenda, presenças e cobranças ficam coerentes com a data de hoje.
 - **Nada sai do sistema:** e-mails vão para o log; WhatsApp e Google Calendar ficam desligados, mesmo que alguém configure as variáveis por engano. Comprovantes enviados na demo ficam no disco do contêiner, nunca no R2.
 - **Conta protegida:** cadastro de contas e alterações de perfil (senha, e-mail, foto) ficam bloqueados. Agendar, marcar presença, cobrar e editar templates funcionam e voltam ao estado inicial no próximo reset.

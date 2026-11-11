@@ -44,10 +44,12 @@ class SendClientCharge implements ShouldQueue
         $charge = $billing->periodCharge($client, $start, $end);
 
         if ($charge['total'] > 0) {
+            $delivery = $client->chargeDeliveryChannel($whatsapp->isConfigured());
+
             // Registro persistente primeiro (com idempotência por período,
             // para retry do job ou re-disparo manual não duplicarem a cobrança);
             // efeitos externos só depois do commit.
-            DB::transaction(function () use ($client, $start, $end, $charge) {
+            DB::transaction(function () use ($client, $start, $end, $charge, $delivery) {
                 $exists = Charge::query()
                     ->where('client_id', $client->id)
                     ->whereNull('client_session_id')
@@ -61,7 +63,7 @@ class SendClientCharge implements ShouldQueue
                         'period_end' => $end->toDateString(),
                         'amount' => $charge['total'],
                         'status' => ChargeStatus::Pending,
-                        'channel' => $client->billing_channel,
+                        'channel' => $delivery ?? $client->billing_channel,
                         'sent_at' => now(),
                     ]))->forceFill([
                         'user_id' => $client->user_id,
@@ -72,15 +74,13 @@ class SendClientCharge implements ShouldQueue
                 $client->forceFill(['last_charged_at' => now()])->save();
             });
 
-            $channel = $client->billing_channel;
-
-            if ($channel->sendsEmail() && $client->email) {
+            if ($delivery?->sendsEmail()) {
                 Mail::to($client->email)->queue(
                     new ClientChargeMail($client, $charge['sessions'], $charge['total'], $start, $end),
                 );
             }
 
-            if ($channel->sendsWhatsapp() && $whatsapp->isConfigured() && $client->canReceiveWhatsapp()) {
+            if ($delivery?->sendsWhatsapp()) {
                 SendWhatsappMessage::dispatch($client->whatsappNumber(), config('services.whatsapp.template_charge'), [
                     $client->name,
                     'R$ '.number_format($charge['total'], 2, ',', '.'),
