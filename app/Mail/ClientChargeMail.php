@@ -10,6 +10,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -29,7 +30,7 @@ class ClientChargeMail extends Mailable implements ShouldQueue
      * Assunto e corpo são renderizados aqui (momento do dispatch) a partir
      * do template do profissional, com fallback para o padrão do sistema.
      *
-     * @param Collection<int, \App\Models\ClientSession> $sessions
+     * @param  Collection<int, ClientSession>  $sessions
      */
     public function __construct(
         public Client $client,
@@ -38,25 +39,12 @@ class ClientChargeMail extends Mailable implements ShouldQueue
         public CarbonInterface $start,
         public CarbonInterface $end,
     ) {
-        $rendered = app(EmailTemplateService::class)->renderFor(
+        $templates = app(EmailTemplateService::class);
+
+        $rendered = $templates->renderFor(
             $client->user,
             EmailTemplateType::Charge,
-            [
-                'cliente_nome' => $client->name,
-                'profissional_nome' => $client->user->name,
-                'valor' => 'R$ '.number_format($total, 2, ',', '.'),
-                'periodo_inicio' => $start->format('d/m/Y'),
-                'periodo_fim' => $end->format('d/m/Y'),
-                'periodo' => $start->format('d/m/Y').' a '.$end->format('d/m/Y'),
-                'lista_sessoes' => $sessions
-                    ->map(fn (ClientSession $session) => sprintf(
-                        '%s — %s — R$ %s',
-                        $session->scheduled_at->format('d/m/Y H:i'),
-                        $session->status->label(),
-                        number_format((float) $session->value, 2, ',', '.'),
-                    ))
-                    ->implode("\n"),
-            ],
+            $templates->chargeVariables($client, $sessions, $total, $start, $end),
         );
 
         $this->renderedSubject = $rendered['subject'];
@@ -65,10 +53,17 @@ class ClientChargeMail extends Mailable implements ShouldQueue
 
     /**
      * Get the message envelope.
+     *
+     * Sai do endereço do sistema com o nome do profissional; as respostas
+     * do cliente vão para o e-mail que o profissional escolheu no Perfil.
      */
     public function envelope(): Envelope
     {
+        $professional = $this->client->user;
+
         return new Envelope(
+            from: new Address(config('mail.from.address'), $professional->name),
+            replyTo: [new Address($professional->replyToAddress(), $professional->name)],
             subject: $this->renderedSubject,
         );
     }

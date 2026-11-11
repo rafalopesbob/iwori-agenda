@@ -3,13 +3,17 @@
 namespace App\Http\Requests;
 
 use App\Enums\EmailTemplateType;
+use App\Enums\MessageChannel;
+use App\Http\Requests\Concerns\ValidatesTemplatePlaceholders;
 use App\Models\EmailTemplate;
-use Closure;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreEmailTemplateRequest extends FormRequest
 {
+    use ValidatesTemplatePlaceholders;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -19,47 +23,47 @@ class StoreEmailTemplateRequest extends FormRequest
     }
 
     /**
+     * Sem canal informado, o texto é de e-mail (formulários antigos).
+     */
+    protected function prepareForValidation(): void
+    {
+        if (! $this->filled('channel')) {
+            $this->merge(['channel' => MessageChannel::Email->value]);
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
+        $channel = MessageChannel::tryFrom((string) $this->input('channel'));
+
         return [
+            'channel' => ['required', Rule::enum(MessageChannel::class)],
             'type' => [
                 'required',
                 Rule::enum(EmailTemplateType::class),
-                Rule::unique('email_templates')->where('user_id', $this->user()->id),
+                Rule::unique('email_templates')
+                    ->where('user_id', $this->user()->id)
+                    ->where('channel', $this->input('channel')),
             ],
             'name' => ['required', 'string', 'max:100'],
-            'subject' => ['required', 'string', 'max:150', $this->validPlaceholders()],
-            'body' => ['required', 'string', 'max:5000', $this->validPlaceholders()],
+            'subject' => $channel === MessageChannel::Whatsapp
+                ? ['prohibited']
+                : ['required', 'string', 'max:150', $this->validPlaceholders()],
+            'body' => ['required', 'string', 'max:'.($channel ?? MessageChannel::Email)->maxBodyLength(), $this->validPlaceholders()],
         ];
     }
 
     /**
-     * Rejeita variáveis {{...}} que não existem para o tipo escolhido.
+     * Tipo de mensagem escolhido no formulário.
      */
-    protected function validPlaceholders(): Closure
+    protected function templateType(): ?EmailTemplateType
     {
-        return function (string $attribute, mixed $value, Closure $fail): void {
-            $type = EmailTemplateType::tryFrom((string) $this->input('type'));
-
-            if ($type === null || ! is_string($value)) {
-                return;
-            }
-
-            preg_match_all('/\{\{\s*([a-z_]+)\s*\}\}/', $value, $matches);
-            $unknown = array_diff(array_unique($matches[1]), array_keys($type->variables()));
-
-            if ($unknown !== []) {
-                $fail(sprintf(
-                    'Variável desconhecida: %s. Variáveis disponíveis: %s.',
-                    implode(', ', $unknown),
-                    implode(', ', array_keys($type->variables())),
-                ));
-            }
-        };
+        return EmailTemplateType::tryFrom((string) $this->input('type'));
     }
 
     /**
@@ -70,7 +74,7 @@ class StoreEmailTemplateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'type.unique' => 'Você já tem um template personalizado deste tipo.',
+            'type.unique' => 'Você já tem um texto personalizado deste tipo.',
         ];
     }
 
@@ -82,10 +86,11 @@ class StoreEmailTemplateRequest extends FormRequest
     public function attributes(): array
     {
         return [
+            'channel' => 'canal',
             'type' => 'tipo',
             'name' => 'nome',
             'subject' => 'assunto',
-            'body' => 'corpo',
+            'body' => 'texto',
         ];
     }
 }

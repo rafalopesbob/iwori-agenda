@@ -64,10 +64,27 @@ enum EmailTemplateType: string
     {
         return match ($this) {
             self::Charge => "Olá, {{cliente_nome}}!\n\n"
-                ."Aqui está o resumo das suas sessões com {{profissional_nome}} "
-                ."no período de {{periodo_inicio}} a {{periodo_fim}}:",
+                .'Aqui está o resumo das suas sessões com {{profissional_nome}} '
+                .'no período de {{periodo_inicio}} a {{periodo_fim}}:',
             self::SessionScheduled => "Olá, {{cliente_nome}}!\n\n"
                 .'Sua sessão com {{profissional_nome}} está agendada:',
+        };
+    }
+
+    /**
+     * Texto padrão do sistema para o WhatsApp. Diferente do e-mail, a
+     * mensagem é só este texto: os detalhes entram pelas variáveis.
+     * Negrito e itálico seguem o WhatsApp (*negrito*, _itálico_).
+     */
+    public function defaultWhatsappBody(): string
+    {
+        return match ($this) {
+            self::Charge => "Olá, {{cliente_nome}}! Aqui é {{profissional_nome}}.\n\n"
+                ."Segue o resumo das suas sessões de {{periodo}}:\n"
+                ."{{lista_sessoes}}\n\n"
+                .'*Total: {{valor}}*',
+            self::SessionScheduled => "Olá, {{cliente_nome}}! Aqui é {{profissional_nome}}.\n\n"
+                .'Sua sessão está confirmada para *{{data}} às {{hora}}* ({{duracao}} min).',
         };
     }
 

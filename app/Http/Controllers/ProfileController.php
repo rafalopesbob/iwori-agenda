@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UpdateProfilePhotoRequest;
 use App\Http\Requests\UpdateProfileRequest;
+use App\Services\GoogleCalendarService;
+use App\Services\WhatsAppService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -16,9 +18,33 @@ class ProfileController extends Controller
     /**
      * Exibe a tela de edição do perfil do profissional autenticado.
      */
-    public function edit(Request $request): View
+    public function edit(Request $request, GoogleCalendarService $calendar, WhatsAppService $whatsapp): View
     {
-        return view('profile.edit', ['user' => $request->user()]);
+        return view('profile.edit', [
+            'user' => $request->user(),
+            'googleConfigured' => $calendar->isConfigured(),
+            'whatsappAutomatic' => $whatsapp->isConfigured(),
+        ]);
+    }
+
+    /**
+     * Define para onde vão as respostas dos clientes aos e-mails do sistema.
+     * Vazio volta a usar o e-mail de acesso.
+     */
+    public function updateReplyTo(Request $request): RedirectResponse
+    {
+        $validated = $request->validate(
+            ['reply_to_email' => ['nullable', 'string', 'email', 'max:255']],
+            [],
+            ['reply_to_email' => 'e-mail para respostas'],
+        );
+
+        $request->user()->forceFill([
+            'reply_to_email' => $validated['reply_to_email'] ?? null,
+        ])->save();
+
+        return redirect()->route('profile.edit')
+            ->with('status', 'Pronto: as respostas dos seus clientes vão para '.$request->user()->replyToAddress().'.');
     }
 
     /**

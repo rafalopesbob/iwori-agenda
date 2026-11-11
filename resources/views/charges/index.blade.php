@@ -117,6 +117,12 @@
                                            class="inline-flex items-center min-h-10 px-2 text-[13px] font-medium text-brand hover:underline">Comprovante</a>
                                     @endif
 
+                                    @if ($charge->status === App\Enums\ChargeStatus::Pending && $charge->client?->whatsappNumber())
+                                        <a href="{{ route('charges.whatsapp', $charge) }}" target="_blank" rel="noopener"
+                                           title="Abrir o seu WhatsApp com a cobrança pronta (reenvio ou lembrete)"
+                                           class="inline-flex items-center justify-center min-h-10 px-3 rounded-lg border border-line-strong bg-white text-ink hover:bg-canvas text-[13px] font-semibold transition-colors">WhatsApp</a>
+                                    @endif
+
                                     @if ($charge->status === App\Enums\ChargeStatus::Pending)
                                         <button type="button" @click="open = true"
                                                 class="inline-flex items-center justify-center min-h-10 px-3 rounded-lg bg-brand hover:bg-brand-dark text-white text-[13px] font-semibold transition-colors cursor-pointer">

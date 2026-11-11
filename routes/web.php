@@ -16,6 +16,7 @@ use App\Http\Controllers\DemoLoginController;
 use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\WhatsAppMessageController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -79,6 +80,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
         Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])->name('profile.photo');
         Route::delete('/profile/photo', [ProfileController::class, 'destroyPhoto'])->name('profile.photo.destroy');
+        Route::patch('/profile/reply-to', [ProfileController::class, 'updateReplyTo'])->name('profile.reply-to');
     });
 
     Route::resource('clients', ClientController::class);
@@ -108,6 +110,15 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::patch('/charges/{charge}/pay', [ChargeRecordController::class, 'pay'])->name('charges.pay');
     Route::patch('/charges/{charge}/reopen', [ChargeRecordController::class, 'reopen'])->name('charges.reopen');
     Route::get('/charges/{charge}/receipt', [ChargeRecordController::class, 'receipt'])->name('charges.receipt');
+
+    // WhatsApp do próprio profissional (link wa.me): o sistema só monta o
+    // texto e abre a conversa; quem envia é ele. Por isso não exige 'verified'.
+    Route::post('/billing/{client}/whatsapp', [WhatsAppMessageController::class, 'chargeClient'])->name('billing.whatsapp')
+        ->middleware('throttle:messages');
+    Route::post('/sessions/{session}/whatsapp-charge', [WhatsAppMessageController::class, 'chargeSession'])->name('sessions.whatsapp.charge')
+        ->middleware('throttle:messages');
+    Route::get('/sessions/{session}/whatsapp', [WhatsAppMessageController::class, 'session'])->name('sessions.whatsapp');
+    Route::get('/charges/{charge}/whatsapp', [WhatsAppMessageController::class, 'charge'])->name('charges.whatsapp');
 
     Route::get('/google/connect', [GoogleCalendarController::class, 'redirect'])->name('google.connect');
     Route::get('/google/callback', [GoogleCalendarController::class, 'callback'])->name('google.callback');

@@ -388,17 +388,17 @@ class ChargeTest extends TestCase
 
         $this->actingAs($user)->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Ainda não ativado. Até lá, as cobranças vão por e-mail.');
+            ->assertSee('Pelo seu celular: os botões “WhatsApp” abrem a conversa com o texto pronto.', false);
         $this->actingAs($user)->get(route('clients.create'))
-            ->assertSee('O envio por WhatsApp ainda não está ativo.');
+            ->assertSee('O envio automático por WhatsApp ainda não está ativo.');
 
         $this->withWhatsappConfigured();
 
         $this->actingAs($user)->get(route('dashboard'))
-            ->assertSee('Ativo. Cobranças saem pelo WhatsApp para quem autorizou.')
-            ->assertDontSee('Ainda não ativado.');
+            ->assertSee('Envio automático ativo para quem autorizou.')
+            ->assertDontSee('Pelo seu celular');
         $this->actingAs($user)->get(route('clients.create'))
-            ->assertDontSee('O envio por WhatsApp ainda não está ativo.');
+            ->assertDontSee('O envio automático por WhatsApp ainda não está ativo.');
     }
 
     public function test_periodo_sem_valor_nao_envia_nada(): void

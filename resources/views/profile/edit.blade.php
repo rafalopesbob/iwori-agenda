@@ -108,6 +108,84 @@
         </form>
     </div>
 
+    {{-- Conexões: por onde as mensagens chegam aos clientes e a agenda do Google --}}
+    <div id="conexoes" class="bg-white rounded-2xl border border-line p-6 sm:p-8 scroll-mt-6">
+        <h2 class="text-lg font-semibold tracking-tight text-ink">Conexões</h2>
+        <p class="text-sm text-muted mt-1 mb-6">Como suas mensagens chegam aos clientes e o que fica ligado à sua conta.</p>
+
+        <div class="divide-y divide-line">
+            {{-- E-mail --}}
+            <section class="pb-6">
+                <h3 class="font-semibold text-ink">E-mail</h3>
+                <p class="text-sm text-muted mt-1">
+                    Os e-mails aos clientes saem do endereço do Agenda Iwori, com o seu nome como remetente.
+                    Quando o cliente responde, a resposta vai para o e-mail abaixo.
+                </p>
+
+                <form method="POST" action="{{ route('profile.reply-to') }}" class="mt-4 flex flex-col sm:flex-row gap-3 sm:items-start">
+                    @csrf
+                    @method('PATCH')
+                    <div class="flex-1 min-w-0">
+                        <label for="reply_to_email" class="block text-sm font-medium text-ink mb-1.5">E-mail para respostas</label>
+                        <input id="reply_to_email" type="email" name="reply_to_email" maxlength="255"
+                               value="{{ old('reply_to_email', $user->reply_to_email) }}" placeholder="{{ $user->email }}"
+                               class="w-full rounded-xl border border-line-strong bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-subtle focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/25">
+                        @error('reply_to_email')
+                            <p class="text-sm text-danger-ink mt-1.5">{{ $message }}</p>
+                        @enderror
+                        <p class="text-[13px] text-muted mt-1.5">Em branco, as respostas vão para o e-mail da sua conta.</p>
+                    </div>
+                    <button type="submit" class="sm:mt-7 inline-flex items-center justify-center gap-2 min-h-11 px-4 rounded-xl border border-line-strong bg-white text-ink hover:bg-canvas text-sm font-semibold transition-colors shrink-0">
+                        Salvar
+                    </button>
+                </form>
+
+                <a href="{{ route('email-templates.index') }}#email" class="inline-flex items-center min-h-11 mt-1 text-sm font-medium text-brand hover:underline">Editar os textos dos e-mails</a>
+            </section>
+
+            {{-- WhatsApp --}}
+            <section class="py-6">
+                <h3 class="font-semibold text-ink">WhatsApp</h3>
+                <p class="text-sm text-muted mt-1">
+                    As mensagens saem do <strong class="font-semibold text-ink">seu</strong> WhatsApp: nas cobranças e nas sessões,
+                    o botão “WhatsApp” abre a conversa com o cliente e o texto pronto. Você confere e toca em enviar.
+                    Não há nada para configurar; basta o celular do cliente estar no cadastro.
+                </p>
+                <p class="text-[13px] text-muted mt-2">
+                    @if ($whatsappAutomatic)
+                        Envio automático: ativo para os clientes que autorizaram.
+                    @else
+                        Envio automático, sem precisar tocar em enviar: ainda não disponível.
+                    @endif
+                </p>
+                <a href="{{ route('email-templates.index') }}#whatsapp" class="inline-flex items-center min-h-11 mt-1 text-sm font-medium text-brand hover:underline">Editar os textos do WhatsApp</a>
+            </section>
+
+            {{-- Google Agenda --}}
+            <section class="pt-6">
+                <h3 class="font-semibold text-ink">Google Agenda</h3>
+                @if (! $googleConfigured)
+                    <p class="text-sm text-muted mt-1">A integração com o Google Agenda ainda não está disponível.</p>
+                @elseif ($user->hasGoogleCalendar())
+                    <p class="text-sm text-muted mt-1">Conectado. Suas sessões aparecem no seu Google Agenda.</p>
+                    <div class="mt-2 flex flex-wrap items-center gap-x-4">
+                        <form method="POST" action="{{ route('google.disconnect') }}">
+                            @csrf
+                            <button type="submit" class="inline-flex items-center min-h-11 text-sm font-medium text-danger-ink hover:underline">Desconectar</button>
+                        </form>
+                        <a href="{{ route('help.google-calendar') }}" class="inline-flex items-center min-h-11 text-sm font-medium text-muted hover:text-ink hover:underline">Como funciona</a>
+                    </div>
+                @else
+                    <p class="text-sm text-muted mt-1">Veja suas sessões no Google Agenda, com lembrete no celular.</p>
+                    <div class="mt-2 flex flex-wrap items-center gap-x-4">
+                        <a href="{{ route('google.connect') }}" class="inline-flex items-center min-h-11 text-sm font-semibold text-brand hover:underline">Conectar Google Agenda</a>
+                        <a href="{{ route('help.google-calendar') }}" class="inline-flex items-center min-h-11 text-sm font-medium text-muted hover:text-ink hover:underline">Como funciona</a>
+                    </div>
+                @endif
+            </section>
+        </div>
+    </div>
+
     {{-- Alterar senha (ou definir a primeira, para quem se cadastrou pelo Google) --}}
     <div class="bg-white rounded-2xl border border-line p-6 sm:p-8">
         @if ($user->hasPassword())

@@ -173,12 +173,13 @@
         {{-- No desktop o status do WhatsApp e do Google Agenda fica no menu lateral. --}}
         @php $whatsappOn = app(App\Services\WhatsAppService::class)->isConfigured(); @endphp
         <section class="lg:hidden rounded-[18px] border border-line bg-white px-[22px] py-5 flex items-start gap-3">
-            <span class="mt-1.5 size-2 rounded-full shrink-0 {{ $whatsappOn ? 'bg-accent' : 'bg-line-strong' }}"></span>
+            <span class="mt-1.5 size-2 rounded-full shrink-0 bg-accent"></span>
             <div class="min-w-0 flex-1">
                 <h2 class="text-[15px] font-semibold">WhatsApp</h2>
                 <p class="mt-0.5 text-sm text-muted">
-                    {{ $whatsappOn ? 'Ativo. Cobranças saem pelo WhatsApp para quem autorizou.' : 'Ainda não ativado. Até lá, as cobranças vão por e-mail.' }}
+                    {{ $whatsappOn ? 'Envio automático ativo para quem autorizou.' : 'Pelo seu celular: os botões “WhatsApp” abrem a conversa com o texto pronto.' }}
                 </p>
+                <a href="{{ route('email-templates.index') }}#whatsapp" class="inline-flex items-center min-h-11 text-sm font-medium text-muted hover:text-ink hover:underline">Editar textos</a>
             </div>
         </section>
 

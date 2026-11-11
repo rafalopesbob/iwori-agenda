@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\EmailTemplateType;
+use App\Enums\MessageChannel;
 use App\Http\Requests\StoreEmailTemplateRequest;
 use App\Http\Requests\UpdateEmailTemplateRequest;
 use App\Models\EmailTemplate;
@@ -15,7 +16,8 @@ use Illuminate\View\View;
 class EmailTemplateController extends Controller
 {
     /**
-     * Lista os templates do profissional e os tipos ainda no padrão do sistema.
+     * Tela "Mensagens": os textos de e-mail e de WhatsApp do profissional
+     * e os tipos ainda no padrão do sistema.
      */
     public function index(Request $request): View
     {
@@ -25,11 +27,12 @@ class EmailTemplateController extends Controller
             ->emailTemplates()
             ->orderBy('type')
             ->get()
-            ->keyBy(fn (EmailTemplate $template) => $template->type->value);
+            ->keyBy(fn (EmailTemplate $template) => $template->channel->value.'.'.$template->type->value);
 
         return view('email-templates.index', [
             'templates' => $templates,
             'types' => EmailTemplateType::cases(),
+            'channels' => MessageChannel::cases(),
         ]);
     }
 
@@ -42,19 +45,21 @@ class EmailTemplateController extends Controller
 
         $type = EmailTemplateType::tryFrom((string) $request->query('type'))
             ?? EmailTemplateType::Charge;
+        $channel = MessageChannel::tryFrom((string) $request->query('channel'))
+            ?? MessageChannel::Email;
 
-        return view('email-templates.create', compact('type'));
+        return view('email-templates.create', compact('type', 'channel'));
     }
 
     /**
-     * Salva o template personalizado do profissional.
+     * Salva o texto personalizado do profissional.
      */
     public function store(StoreEmailTemplateRequest $request): RedirectResponse
     {
         $request->user()->emailTemplates()->create($request->validated());
 
         return redirect()->route('email-templates.index')
-            ->with('status', 'Template criado com sucesso.');
+            ->with('status', 'Texto personalizado salvo.');
     }
 
     /**
@@ -75,7 +80,7 @@ class EmailTemplateController extends Controller
         $emailTemplate->update($request->validated());
 
         return redirect()->route('email-templates.index')
-            ->with('status', 'Template atualizado com sucesso.');
+            ->with('status', 'Texto atualizado.');
     }
 
     /**
@@ -88,27 +93,32 @@ class EmailTemplateController extends Controller
         $emailTemplate->delete();
 
         return redirect()->route('email-templates.index')
-            ->with('status', 'Template removido. O padrão do sistema volta a ser usado.');
+            ->with('status', 'Texto removido. O padrão do sistema volta a ser usado.');
     }
 
     /**
-     * Pré-visualiza assunto e corpo com dados de exemplo, sem salvar.
+     * Pré-visualiza o texto com dados de exemplo, sem salvar.
      */
     public function preview(Request $request, EmailTemplateService $service): View
     {
         $this->authorize('viewAny', EmailTemplate::class);
 
+        $channel = MessageChannel::tryFrom((string) $request->input('channel')) ?? MessageChannel::Email;
+
         $validated = $request->validate([
             'type' => ['required', Rule::enum(EmailTemplateType::class)],
-            'subject' => ['required', 'string', 'max:150'],
-            'body' => ['required', 'string', 'max:5000'],
+            'subject' => $channel === MessageChannel::Email ? ['required', 'string', 'max:150'] : ['nullable'],
+            'body' => ['required', 'string', 'max:'.$channel->maxBodyLength()],
         ]);
 
         $type = EmailTemplateType::from($validated['type']);
 
         return view('email-templates.preview', [
             'type' => $type,
-            'subject' => $service->render($validated['subject'], $type->sampleData()),
+            'channel' => $channel,
+            'subject' => $channel === MessageChannel::Email
+                ? $service->render($validated['subject'], $type->sampleData())
+                : null,
             'body' => $service->render($validated['body'], $type->sampleData()),
         ]);
     }

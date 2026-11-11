@@ -94,5 +94,22 @@
                         class="w-full min-h-11 rounded-xl border border-line-strong bg-white hover:bg-canvas text-sm font-semibold transition-colors">Cobrar</button>
             </form>
         </div>
+
+        {{-- Abrem o WhatsApp do profissional com o texto pronto (nova aba). --}}
+        @if ($client->whatsappNumber())
+            <div class="mt-1 grid grid-cols-2 gap-2">
+                @if ($session->status === App\Enums\SessionStatus::Scheduled)
+                    <a href="{{ route('sessions.whatsapp', $session) }}" target="_blank" rel="noopener"
+                       title="Abrir o seu WhatsApp com a confirmação da sessão"
+                       class="inline-flex items-center justify-center min-h-11 rounded-xl border border-line-strong bg-white hover:bg-canvas text-sm font-semibold transition-colors">Confirmar no WhatsApp</a>
+                @endif
+                <form method="POST" action="{{ route('sessions.whatsapp.charge', $session) }}" target="_blank"
+                      class="{{ $session->status === App\Enums\SessionStatus::Scheduled ? '' : 'col-span-2' }}">
+                    @csrf
+                    <button type="submit" title="Registrar a cobrança desta sessão e abrir o seu WhatsApp com a mensagem pronta"
+                            class="w-full min-h-11 rounded-xl border border-line-strong bg-white hover:bg-canvas text-sm font-semibold transition-colors">Cobrar no WhatsApp</button>
+                </form>
+            </div>
+        @endif
     @endif
 </div>

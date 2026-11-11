@@ -28,6 +28,12 @@
     </nav>
 </div>
 
+@if (session('status'))
+    <div class="rounded-xl border border-accent/20 bg-accent-tint px-4 py-3 text-sm font-medium text-accent-ink mb-6">
+        {{ session('status') }}
+    </div>
+@endif
+
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
     <div class="bg-white rounded-2xl border border-line p-5">
         <p class="text-sm font-medium text-muted">Faturamento do mês</p>
@@ -75,7 +81,7 @@
                             <td class="px-5 py-3.5 text-center tabular-nums text-muted">{{ $row['canceled'] }}</td>
                             <td class="px-5 py-3.5 text-center tabular-nums text-muted">{{ $row['scheduled'] }}</td>
                             <td class="px-5 py-3.5 text-right font-medium tabular-nums text-ink whitespace-nowrap">R$ {{ number_format($row['total'], 2, ',', '.') }}</td>
-                            <td class="px-5 py-2 text-right">
+                            <td class="px-5 py-2 text-right whitespace-nowrap">
                                 <form method="POST" action="{{ route('billing.charge', $row['client']) }}" class="inline">
                                     @csrf
                                     <button type="submit"
@@ -84,6 +90,17 @@
                                         Cobrar
                                     </button>
                                 </form>
+                                @if ($row['client']->whatsappNumber())
+                                    {{-- Nova aba: o Faturamento continua aberto enquanto o WhatsApp abre. --}}
+                                    <form method="POST" action="{{ route('billing.whatsapp', $row['client']) }}" target="_blank" class="inline">
+                                        @csrf
+                                        <button type="submit"
+                                                title="Registrar a cobrança do período e abrir o seu WhatsApp com a mensagem pronta"
+                                                class="inline-flex items-center justify-center min-h-10 px-3 rounded-lg border border-line-strong bg-white text-ink hover:bg-canvas text-[13px] font-semibold transition-colors cursor-pointer">
+                                            WhatsApp
+                                        </button>
+                                    </form>
+                                @endif
                             </td>
                         </tr>
                     @endforeach

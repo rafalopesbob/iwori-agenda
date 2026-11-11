@@ -76,6 +76,15 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Para onde vão as respostas dos clientes aos e-mails enviados pelo
+     * sistema: o endereço escolhido no Perfil ou, sem ele, o e-mail de acesso.
+     */
+    public function replyToAddress(): string
+    {
+        return $this->reply_to_email ?: $this->email;
+    }
+
+    /**
      * URL da foto de perfil, quando houver. A foto é privada e sai pela rota
      * autenticada profile.photo.show; o ?v= muda a cada nova foto (cache).
      */
@@ -95,7 +104,7 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Templates de e-mail personalizados do profissional.
+     * Textos personalizados das mensagens (e-mail e WhatsApp) do profissional.
      */
     public function emailTemplates(): HasMany
     {

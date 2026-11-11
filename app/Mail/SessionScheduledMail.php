@@ -8,6 +8,7 @@ use App\Services\EmailTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -29,16 +30,12 @@ class SessionScheduledMail extends Mailable implements ShouldQueue
     public function __construct(
         public ClientSession $session,
     ) {
-        $rendered = app(EmailTemplateService::class)->renderFor(
+        $templates = app(EmailTemplateService::class);
+
+        $rendered = $templates->renderFor(
             $session->client->user,
             EmailTemplateType::SessionScheduled,
-            [
-                'cliente_nome' => $session->client->name,
-                'profissional_nome' => $session->client->user->name,
-                'data' => $session->scheduled_at->format('d/m/Y'),
-                'hora' => $session->scheduled_at->format('H:i'),
-                'duracao' => (string) $session->duration_minutes,
-            ],
+            $templates->sessionVariables($session),
         );
 
         $this->renderedSubject = $rendered['subject'];
@@ -47,10 +44,17 @@ class SessionScheduledMail extends Mailable implements ShouldQueue
 
     /**
      * Get the message envelope.
+     *
+     * Sai do endereço do sistema com o nome do profissional; as respostas
+     * do cliente vão para o e-mail que o profissional escolheu no Perfil.
      */
     public function envelope(): Envelope
     {
+        $professional = $this->session->client->user;
+
         return new Envelope(
+            from: new Address(config('mail.from.address'), $professional->name),
+            replyTo: [new Address($professional->replyToAddress(), $professional->name)],
             subject: $this->renderedSubject,
         );
     }

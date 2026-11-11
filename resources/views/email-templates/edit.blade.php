@@ -1,23 +1,24 @@
 @extends('layouts.app')
 
-@section('title', 'Editar template — Agenda Iwori')
+@section('title', 'Editar mensagem — Agenda Iwori')
 
 @section('content')
 <div class="max-w-2xl mx-auto bg-white rounded-2xl border border-line p-6 sm:p-8"
      x-data="{
          insertVariable(name) {
              const el = this.$refs.body;
-             const token = '{{ '{{' }}' + name + '{{ '}}' }}';
+             const token = '{' + '{' + name + '}' + '}';
              const start = el.selectionStart ?? el.value.length;
              el.value = el.value.slice(0, start) + token + el.value.slice(el.selectionEnd ?? start);
              el.focus();
              el.selectionStart = el.selectionEnd = start + token.length;
          }
      }">
-    <h1 class="text-2xl font-semibold tracking-tight text-ink mb-1">Editar template</h1>
-    <p class="text-sm text-muted mb-6">{{ $template->type->label() }}</p>
-
     @php($type = $template->type)
+    @php($channel = $template->channel)
+
+    <h1 class="text-2xl font-semibold tracking-tight text-ink mb-1">{{ $channel === App\Enums\MessageChannel::Email ? 'Editar e-mail' : 'Editar WhatsApp' }}</h1>
+    <p class="text-sm text-muted mb-6">{{ $type->label() }}</p>
 
     <form method="POST" action="{{ route('email-templates.update', $template) }}" class="space-y-5">
         @method('PUT')
@@ -27,7 +28,7 @@
             <button type="submit" class="inline-flex items-center justify-center gap-2 min-h-11 px-5 rounded-xl bg-brand hover:bg-brand-dark text-white text-sm font-semibold transition-colors">
                 Salvar alterações
             </button>
-            <button type="submit" formaction="{{ route('email-templates.preview') }}" formtarget="_blank" formmethod="post"
+            <button type="submit" formaction="{{ route('email-templates.preview', ['channel' => $channel->value]) }}" formtarget="_blank" formmethod="post"
                     name="type" value="{{ $type->value }}"
                     class="inline-flex items-center justify-center gap-2 min-h-11 px-4 rounded-xl border border-line-strong bg-white text-ink hover:bg-canvas text-sm font-semibold transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" class="size-4 shrink-0" aria-hidden="true">
@@ -35,7 +36,7 @@
                 </svg>
                 Pré-visualizar
             </button>
-            <a href="{{ route('email-templates.index') }}" class="inline-flex items-center min-h-11 px-2 text-sm font-medium text-muted hover:text-ink">Cancelar</a>
+            <a href="{{ route('email-templates.index') }}#{{ $channel->value }}" class="inline-flex items-center min-h-11 px-2 text-sm font-medium text-muted hover:text-ink">Cancelar</a>
         </div>
     </form>
 </div>

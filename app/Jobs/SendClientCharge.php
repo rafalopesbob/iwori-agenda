@@ -2,9 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Enums\ChargeStatus;
 use App\Mail\ClientChargeMail;
-use App\Models\Charge;
 use App\Models\Client;
 use App\Services\BillingService;
 use App\Services\WhatsAppService;
@@ -12,7 +10,6 @@ use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
 class SendClientCharge implements ShouldQueue
@@ -49,30 +46,7 @@ class SendClientCharge implements ShouldQueue
             // Registro persistente primeiro (com idempotência por período,
             // para retry do job ou re-disparo manual não duplicarem a cobrança);
             // efeitos externos só depois do commit.
-            DB::transaction(function () use ($client, $start, $end, $charge, $delivery) {
-                $exists = Charge::query()
-                    ->where('client_id', $client->id)
-                    ->whereNull('client_session_id')
-                    ->where('period_start', $start->toDateString())
-                    ->where('period_end', $end->toDateString())
-                    ->exists();
-
-                if (! $exists) {
-                    (new Charge([
-                        'period_start' => $start->toDateString(),
-                        'period_end' => $end->toDateString(),
-                        'amount' => $charge['total'],
-                        'status' => ChargeStatus::Pending,
-                        'channel' => $delivery ?? $client->billing_channel,
-                        'sent_at' => now(),
-                    ]))->forceFill([
-                        'user_id' => $client->user_id,
-                        'client_id' => $client->id,
-                    ])->save();
-                }
-
-                $client->forceFill(['last_charged_at' => now()])->save();
-            });
+            $billing->recordPeriodCharge($client, $start, $end, $charge['total'], $delivery ?? $client->billing_channel);
 
             if ($delivery?->sendsEmail()) {
                 Mail::to($client->email)->queue(

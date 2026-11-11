@@ -3,11 +3,15 @@
 namespace App\Http\Requests;
 
 use App\Enums\EmailTemplateType;
-use Closure;
+use App\Enums\MessageChannel;
+use App\Http\Requests\Concerns\ValidatesTemplatePlaceholders;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateEmailTemplateRequest extends FormRequest
 {
+    use ValidatesTemplatePlaceholders;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -19,43 +23,32 @@ class UpdateEmailTemplateRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * O tipo não pode ser trocado na edição — fica de fora das regras
-     * e do formulário.
+     * Tipo e canal não podem ser trocados na edição — ficam de fora das
+     * regras e do formulário.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
+        $channel = $this->route('email_template')->channel;
+
         return [
             'name' => ['required', 'string', 'max:100'],
-            'subject' => ['required', 'string', 'max:150', $this->validPlaceholders()],
-            'body' => ['required', 'string', 'max:5000', $this->validPlaceholders()],
+            'subject' => $channel === MessageChannel::Whatsapp
+                ? ['prohibited']
+                : ['required', 'string', 'max:150', $this->validPlaceholders()],
+            'body' => ['required', 'string', 'max:'.$channel->maxBodyLength(), $this->validPlaceholders()],
         ];
     }
 
     /**
-     * Rejeita variáveis {{...}} que não existem para o tipo do template.
+     * Tipo da mensagem que está sendo editada.
      */
-    protected function validPlaceholders(): Closure
+    protected function templateType(): ?EmailTemplateType
     {
-        return function (string $attribute, mixed $value, Closure $fail): void {
-            $type = $this->route('email_template')->type;
+        $type = $this->route('email_template')->type;
 
-            if (! $type instanceof EmailTemplateType || ! is_string($value)) {
-                return;
-            }
-
-            preg_match_all('/\{\{\s*([a-z_]+)\s*\}\}/', $value, $matches);
-            $unknown = array_diff(array_unique($matches[1]), array_keys($type->variables()));
-
-            if ($unknown !== []) {
-                $fail(sprintf(
-                    'Variável desconhecida: %s. Variáveis disponíveis: %s.',
-                    implode(', ', $unknown),
-                    implode(', ', array_keys($type->variables())),
-                ));
-            }
-        };
+        return $type instanceof EmailTemplateType ? $type : null;
     }
 
     /**
@@ -68,7 +61,7 @@ class UpdateEmailTemplateRequest extends FormRequest
         return [
             'name' => 'nome',
             'subject' => 'assunto',
-            'body' => 'corpo',
+            'body' => 'texto',
         ];
     }
 }

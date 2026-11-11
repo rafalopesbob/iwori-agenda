@@ -84,7 +84,8 @@
     <div x-cloak x-show="channel !== 'email'" class="rounded-xl bg-canvas px-4 py-3">
         @unless (app(App\Services\WhatsAppService::class)->isConfigured())
             <p class="mb-2 rounded-lg bg-warn-tint px-3 py-2 text-[13px] text-warn-ink">
-                O envio por WhatsApp ainda não está ativo. Até lá, as cobranças deste cliente vão para o e-mail cadastrado.
+                O envio automático por WhatsApp ainda não está ativo. Até lá, a cobrança automática vai para o
+                e-mail cadastrado, e o botão “WhatsApp” abre o seu WhatsApp com a mensagem pronta.
             </p>
         @endunless
         <label class="flex items-start gap-3 min-h-11 py-1 text-[15px]">
