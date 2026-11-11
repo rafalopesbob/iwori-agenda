@@ -33,13 +33,19 @@ class ChargeTest extends TestCase
         $this->withoutVite();
     }
 
-    protected function withWhatsappConfigured(): void
+    /**
+     * Conecta o WhatsApp do profissional (cada um usa o próprio número).
+     */
+    protected function connectWhatsapp(User $user, string $phoneNumberId = '123456789', string $token = 'token-teste'): User
     {
-        config([
-            'services.whatsapp.token' => 'token-teste',
-            'services.whatsapp.phone_number_id' => '123456789',
-            'services.whatsapp.template_charge' => 'cobranca_iwori',
-        ]);
+        $user->forceFill([
+            'whatsapp_phone_number_id' => $phoneNumberId,
+            'whatsapp_business_account_id' => '555000111',
+            'whatsapp_token' => $token,
+            'whatsapp_display_phone' => '+55 11 3000-0000',
+        ])->save();
+
+        return $user;
     }
 
     // ── Vencimento por ciclo ─────────────────────────────────────────
@@ -180,11 +186,11 @@ class ChargeTest extends TestCase
 
     public function test_cobranca_por_whatsapp_envia_template_para_o_numero(): void
     {
-        $this->withWhatsappConfigured();
         Mail::fake();
         Http::fake(['graph.facebook.com/*' => Http::response(['messages' => [['id' => 'wamid.1']]])]);
 
         $client = Client::factory()->channelWhatsapp()->create(['phone' => '(11) 98765-4321']);
+        $this->connectWhatsapp($client->user);
         ClientSession::factory()->for($client)->completed()->create([
             'scheduled_at' => now()->subDays(3), 'value' => 180,
         ]);
@@ -201,7 +207,6 @@ class ChargeTest extends TestCase
 
     public function test_canal_ambos_envia_email_e_whatsapp(): void
     {
-        $this->withWhatsappConfigured();
         Mail::fake();
         Http::fake(['graph.facebook.com/*' => Http::response([])]);
 
@@ -209,6 +214,7 @@ class ChargeTest extends TestCase
             'email' => 'cliente@teste.com',
             'phone' => '(11) 98765-4321',
         ]);
+        $this->connectWhatsapp($client->user);
         ClientSession::factory()->for($client)->completed()->create([
             'scheduled_at' => now()->subDays(3), 'value' => 180,
         ]);
@@ -243,7 +249,6 @@ class ChargeTest extends TestCase
 
     public function test_whatsapp_sem_autorizacao_do_cliente_cobra_por_email(): void
     {
-        $this->withWhatsappConfigured();
         Mail::fake();
         Http::fake();
 
@@ -251,6 +256,7 @@ class ChargeTest extends TestCase
             'email' => 'cliente@teste.com',
             'phone' => '(11) 98765-4321',
         ]);
+        $this->connectWhatsapp($client->user);
         ClientSession::factory()->for($client)->completed()->create([
             'scheduled_at' => now()->subDays(3), 'value' => 180,
         ]);
@@ -283,11 +289,11 @@ class ChargeTest extends TestCase
 
     public function test_cobranca_registra_o_canal_usado_de_fato(): void
     {
-        $this->withWhatsappConfigured();
         Mail::fake();
         Queue::fake();
 
         $client = Client::factory()->channelWhatsapp()->create(['phone' => '(11) 98765-4321']);
+        $this->connectWhatsapp($client->user);
         ClientSession::factory()->for($client)->completed()->create([
             'scheduled_at' => now()->subDays(3), 'value' => 180,
         ]);
@@ -301,7 +307,6 @@ class ChargeTest extends TestCase
 
     public function test_falha_no_whatsapp_nao_reenvia_o_email(): void
     {
-        $this->withWhatsappConfigured();
         Mail::fake();
         Queue::fake();
 
@@ -309,6 +314,7 @@ class ChargeTest extends TestCase
             'email' => 'cliente@teste.com',
             'phone' => '(11) 98765-4321',
         ]);
+        $this->connectWhatsapp($client->user);
         ClientSession::factory()->for($client)->completed()->create([
             'scheduled_at' => now()->subDays(3), 'value' => 180,
         ]);
@@ -337,23 +343,51 @@ class ChargeTest extends TestCase
 
     public function test_versao_da_graph_api_vem_da_configuracao(): void
     {
-        $this->withWhatsappConfigured();
+        $user = $this->connectWhatsapp(User::factory()->create());
         config(['services.whatsapp.api_version' => 'v99.0']);
         Http::fake(['graph.facebook.com/*' => Http::response([])]);
 
-        (new SendWhatsappMessage('5511987654321', 'cobranca_iwori', ['Ana', 'R$ 180,00', 'out/2026']))
+        (new SendWhatsappMessage($user, '5511987654321', 'cobranca_iwori', ['Ana', 'R$ 180,00', 'out/2026']))
             ->handle(app(WhatsAppService::class));
 
         Http::assertSent(fn ($request) => str_starts_with($request->url(), 'https://graph.facebook.com/v99.0/123456789/messages'));
     }
 
+    public function test_cada_profissional_cobra_do_proprio_numero(): void
+    {
+        Mail::fake();
+        Http::fake(['graph.facebook.com/*' => Http::response(['messages' => [['id' => 'wamid.1']]])]);
+
+        $ana = Client::factory()->channelWhatsapp()->create(['phone' => '(11) 98765-4321']);
+        $bruno = Client::factory()->channelWhatsapp()->create(['phone' => '(21) 99876-5432']);
+        $this->connectWhatsapp($ana->user, '111111111', 'token-da-katia');
+        $this->connectWhatsapp($bruno->user, '222222222', 'token-do-joao');
+        // Modelo próprio do segundo profissional.
+        $bruno->user->forceFill(['whatsapp_template' => 'cobranca_joao'])->save();
+
+        foreach ([$ana, $bruno] as $client) {
+            ClientSession::factory()->for($client)->completed()->create(['scheduled_at' => now()->subDays(3), 'value' => 180]);
+            (new SendClientCharge($client->fresh()))->handle(app(BillingService::class), app(WhatsAppService::class));
+        }
+
+        Http::assertSent(fn ($request) => str_contains($request->url(), '/111111111/messages')
+            && $request->hasHeader('Authorization', 'Bearer token-da-katia')
+            && $request['to'] === '5511987654321'
+            && $request['template']['name'] === 'cobranca_iwori');
+        Http::assertSent(fn ($request) => str_contains($request->url(), '/222222222/messages')
+            && $request->hasHeader('Authorization', 'Bearer token-do-joao')
+            && $request['to'] === '5521998765432'
+            && $request['template']['name'] === 'cobranca_joao');
+        Http::assertSentCount(2);
+    }
+
     public function test_cobranca_avulsa_por_whatsapp_usa_o_job_proprio(): void
     {
-        $this->withWhatsappConfigured();
         Mail::fake();
         Queue::fake();
 
         $client = Client::factory()->channelWhatsapp()->create(['phone' => '(21) 99876-5432']);
+        $this->connectWhatsapp($client->user);
         $session = ClientSession::factory()->for($client)->completed()->create(['value' => 175]);
 
         (new SendSessionCharge($session))->handle(app(WhatsAppService::class));
@@ -390,15 +424,15 @@ class ChargeTest extends TestCase
             ->assertOk()
             ->assertSee('Pelo seu celular: os botões “WhatsApp” abrem a conversa com o texto pronto.', false);
         $this->actingAs($user)->get(route('clients.create'))
-            ->assertSee('O envio automático por WhatsApp ainda não está ativo.');
+            ->assertSee('O envio automático por WhatsApp ainda não está ativo');
 
-        $this->withWhatsappConfigured();
+        $this->connectWhatsapp($user);
 
         $this->actingAs($user)->get(route('dashboard'))
-            ->assertSee('Envio automático ativo para quem autorizou.')
+            ->assertSee('Envio automático pelo seu número +55 11 3000-0000.')
             ->assertDontSee('Pelo seu celular');
         $this->actingAs($user)->get(route('clients.create'))
-            ->assertDontSee('O envio automático por WhatsApp ainda não está ativo.');
+            ->assertDontSee('O envio automático por WhatsApp ainda não está ativo');
     }
 
     public function test_periodo_sem_valor_nao_envia_nada(): void

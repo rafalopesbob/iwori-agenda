@@ -87,10 +87,10 @@ O serviço da demo pede o mesmo conjunto, com `DB_HOST`, `DB_USERNAME` e `DB_PAS
 | Variável | Uso |
 |---|---|
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Sincronização com o Google Calendar e login com Google |
-| `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID`, `WHATSAPP_TEMPLATE_CHARGE` | Cobrança por WhatsApp (template padrão `cobranca_iwori`) |
+| `WHATSAPP_ENABLED` | `false` desliga o envio automático por WhatsApp para todos (padrão: ligado). Não há número do sistema: cada profissional conecta o próprio na tela **WhatsApp** do app. |
 | `WHATSAPP_API_VERSION` | Versão da Graph API da Meta (padrão `v25.0`). Troque quando a Meta anunciar o fim da versão em uso. |
 
-> ⚠️ **O `APP_KEY` de produção nunca pode mudar.** As anotações de clientes, sessões e cobranças e os tokens do Google são gravados criptografados com ele. Trocar a chave deixa esses dados ilegíveis. Guarde-a num gerenciador de senhas e não reutilize a chave local.
+> ⚠️ **O `APP_KEY` de produção nunca pode mudar.** As anotações de clientes, sessões e cobranças e os tokens do Google e do WhatsApp são gravados criptografados com ele. Trocar a chave deixa esses dados ilegíveis. Guarde-a num gerenciador de senhas e não reutilize a chave local.
 
 ## 4. Passo a passo
 
@@ -165,7 +165,7 @@ Sem o R2, coloque `UPLOADS_DISK=local` no Render. O app funciona, mas fotos e co
 
 - **Google Agenda:** veja o passo a passo completo em [4.6.1](#461-google-agenda).
 - **Login com Google:** usa o mesmo client OAuth da Agenda; veja [4.6.2](#462-login-com-google).
-- **WhatsApp:** adicione `WHATSAPP_TOKEN` e `WHATSAPP_PHONE_ID` (o template padrão é `cobranca_iwori`). Só recebem por WhatsApp os clientes com celular válido e autorização marcada no cadastro. Se a Meta falhar, a mensagem é refeita sozinha até 3 vezes, sem reenviar o e-mail.
+- **WhatsApp:** nada a configurar no servidor. Cada profissional conecta o **próprio número** na tela **WhatsApp** do app (ID do número, ID da conta do WhatsApp Business e token da Meta, com passo a passo na própria tela); o token fica criptografado no cadastro dele, com o `APP_KEY`. As cobranças automáticas saem do número de quem cobra, para os clientes com celular válido e autorização marcada no cadastro. Se a Meta falhar, a mensagem é refeita sozinha até 3 vezes, sem reenviar o e-mail. Para o mesmo número continuar no app do WhatsApp (coexistência), será preciso o cadastro do Iwori como *Tech Provider* na Meta e o botão oficial de conexão (ainda não feito).
 
 #### 4.6.1 Google Agenda
 
@@ -262,7 +262,7 @@ Para rodar os testes num TiDB local, igual ao da nuvem: `docker run -d -p 127.0.
 - [x] Conexão com o banco por TLS, validando o certificado do TiDB Cloud com as CAs públicas do sistema.
 - [ ] `DEMO_MODE` definido **só** no serviço `iwori-agenda-demo`, que usa uma instância própria do TiDB Cloud (seção 8).
 - [ ] `APP_KEY` exclusivo de produção, guardado fora do repositório e **nunca trocado**.
-- [ ] Segredos (`APP_KEY`, `DB_PASSWORD`, chave SMTP, `GOOGLE_CLIENT_SECRET`, `WHATSAPP_TOKEN`) só no painel do Render. Nunca em commits, issues ou chats.
+- [ ] Segredos (`APP_KEY`, `DB_PASSWORD`, chave SMTP, `GOOGLE_CLIENT_SECRET`) só no painel do Render. Nunca em commits, issues ou chats. (Os tokens do WhatsApp de cada profissional ficam criptografados no banco.)
 - [ ] Na Brevo, use a **chave SMTP**, não a senha da conta.
 - [ ] No R2, bucket sem acesso público e token só com **Object Read & Write** no bucket `iwori-uploads`.
 - [ ] Opcional: no TiDB Cloud, limite o acesso ao *Public Endpoint* aos IPs de saída do Render (painel do serviço no Render → *Connect → Outbound*).

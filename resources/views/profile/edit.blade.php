@@ -147,18 +147,20 @@
             <section class="py-6">
                 <h3 class="font-semibold text-ink">WhatsApp</h3>
                 <p class="text-sm text-muted mt-1">
-                    As mensagens saem do <strong class="font-semibold text-ink">seu</strong> WhatsApp: nas cobranças e nas sessões,
-                    o botão “WhatsApp” abre a conversa com o cliente e o texto pronto. Você confere e toca em enviar.
-                    Não há nada para configurar; basta o celular do cliente estar no cadastro.
+                    As mensagens saem sempre do <strong class="font-semibold text-ink">seu</strong> WhatsApp. Nas cobranças e nas
+                    sessões, o botão “WhatsApp” abre a conversa com o cliente e o texto pronto, e você toca em enviar.
                 </p>
-                <p class="text-[13px] text-muted mt-2">
+                <p class="text-[13px] mt-2 {{ $whatsappAutomatic ? 'text-accent-ink' : 'text-muted' }}">
                     @if ($whatsappAutomatic)
-                        Envio automático: ativo para os clientes que autorizaram.
+                        Envio automático ligado: as cobranças saem do seu número {{ $user->whatsapp_display_phone }} para os clientes que autorizaram.
                     @else
-                        Envio automático, sem precisar tocar em enviar: ainda não disponível.
+                        Envio automático, sem precisar tocar em enviar: conecte o seu número para ligar.
                     @endif
                 </p>
-                <a href="{{ route('email-templates.index') }}#whatsapp" class="inline-flex items-center min-h-11 mt-1 text-sm font-medium text-brand hover:underline">Editar os textos do WhatsApp</a>
+                <div class="mt-1 flex flex-wrap items-center gap-x-4">
+                    <a href="{{ route('whatsapp.edit') }}" class="inline-flex items-center min-h-11 text-sm font-semibold text-brand hover:underline">{{ $whatsappAutomatic ? 'Configurar o WhatsApp' : 'Conectar o meu número' }}</a>
+                    <a href="{{ route('email-templates.index') }}#whatsapp" class="inline-flex items-center min-h-11 text-sm font-medium text-muted hover:text-ink hover:underline">Editar os textos do WhatsApp</a>
+                </div>
             </section>
 
             {{-- Google Agenda --}}

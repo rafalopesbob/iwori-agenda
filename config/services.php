@@ -45,10 +45,11 @@ return [
         'verified' => (bool) env('GOOGLE_APP_VERIFIED', false),
     ],
 
+    // WhatsApp Cloud API (Meta). Não há número do sistema: cada profissional
+    // conecta o próprio WhatsApp na tela WhatsApp (credenciais no cadastro dele).
     'whatsapp' => [
-        'token' => env('WHATSAPP_TOKEN'),
-        'phone_number_id' => env('WHATSAPP_PHONE_ID'),
-        'template_charge' => env('WHATSAPP_TEMPLATE_CHARGE', 'cobranca_iwori'),
+        // Desligado no ambiente de demonstração (AppServiceProvider).
+        'enabled' => (bool) env('WHATSAPP_ENABLED', true),
         // A Meta desliga cada versão da Graph API cerca de dois anos depois
         // da seguinte: atualize aqui quando ela anunciar o fim da versão em uso.
         'api_version' => env('WHATSAPP_API_VERSION', 'v25.0'),
