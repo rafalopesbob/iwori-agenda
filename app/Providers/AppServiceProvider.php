@@ -39,7 +39,7 @@ class AppServiceProvider extends ServiceProvider
         if (config('demo.enabled')) {
             config([
                 'mail.default' => 'log',
-                'services.whatsapp.token' => null,
+                'services.whatsapp.enabled' => false,
                 'services.google.client_id' => null,
                 'services.google.client_secret' => null,
                 'filesystems.uploads' => 'local',

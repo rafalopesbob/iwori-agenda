@@ -31,7 +31,7 @@ class BillingController extends Controller
             : null;
 
         // Prévia do botão Cobrar de cada cliente (período, valor e canal).
-        $whatsappOn = $whatsapp->isConfigured();
+        $whatsappOn = $whatsapp->isConfiguredFor($request->user());
         $previews = $report['rows']->mapWithKeys(fn (array $row) => [
             $row['client']->id => $billing->chargePreview($row['client'], $whatsappOn),
         ]);

@@ -32,8 +32,7 @@ class DemoModeTest extends TestCase
         config([
             'demo.enabled' => true,
             'mail.default' => 'smtp',
-            'services.whatsapp.token' => 'token-configurado-por-engano',
-            'services.whatsapp.phone_number_id' => '123',
+            'services.whatsapp.enabled' => true,
             'services.google.client_id' => 'client-configurado-por-engano',
             'filesystems.uploads' => 'r2',
         ]);
@@ -159,7 +158,13 @@ class DemoModeTest extends TestCase
         $this->enableDemo();
 
         $this->assertSame('log', config('mail.default'));
-        $this->assertFalse(app(WhatsAppService::class)->isConfigured());
+        // Mesmo um profissional com o WhatsApp conectado não envia nada na demo.
+        $conectado = User::factory()->create()->forceFill([
+            'whatsapp_phone_number_id' => '123456789',
+            'whatsapp_token' => 'token-configurado-por-engano',
+        ]);
+        $this->assertTrue($conectado->hasWhatsapp());
+        $this->assertFalse(app(WhatsAppService::class)->isConfiguredFor($conectado));
         $this->assertNull(config('services.google.client_id'));
         // Comprovantes da demo nunca vão para o armazenamento dos dados reais.
         $this->assertSame('local', config('filesystems.uploads'));

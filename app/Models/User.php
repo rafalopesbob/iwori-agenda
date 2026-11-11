@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Notifications\ResetPasswordQueued;
 use App\Notifications\VerifyEmailQueued;
+use App\Services\WhatsAppService;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,7 +15,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 #[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token', 'google_id', 'google_access_token', 'google_refresh_token'])]
+#[Hidden(['password', 'remember_token', 'google_id', 'google_access_token', 'google_refresh_token', 'whatsapp_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
@@ -55,7 +56,26 @@ class User extends Authenticatable implements MustVerifyEmail
             'google_access_token' => 'encrypted',
             'google_refresh_token' => 'encrypted',
             'google_token_expires_at' => 'datetime',
+            'whatsapp_token' => 'encrypted',
+            'whatsapp_connected_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Indica se o profissional conectou o WhatsApp dele (Cloud API da Meta).
+     * O envio automático sai sempre do número do próprio profissional.
+     */
+    public function hasWhatsapp(): bool
+    {
+        return filled($this->whatsapp_phone_number_id) && filled($this->whatsapp_token);
+    }
+
+    /**
+     * Nome do modelo aprovado na Meta usado nas cobranças por WhatsApp.
+     */
+    public function whatsappTemplate(): string
+    {
+        return $this->whatsapp_template ?: WhatsAppService::DEFAULT_TEMPLATE;
     }
 
     /**

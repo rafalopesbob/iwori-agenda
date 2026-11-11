@@ -25,7 +25,7 @@ class ChargeController extends Controller
     {
         $this->authorize('update', $client);
 
-        $preview = $billing->chargePreview($client, $whatsapp->isConfigured());
+        $preview = $billing->chargePreview($client, $whatsapp->isConfiguredFor($client->user));
 
         if ($preview['total'] <= 0) {
             return back()->with('status', sprintf(

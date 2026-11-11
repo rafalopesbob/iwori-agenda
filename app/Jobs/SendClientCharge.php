@@ -42,7 +42,7 @@ class SendClientCharge implements ShouldQueue
         $charge = $billing->periodCharge($client, $start, $end);
 
         if ($charge['total'] > 0) {
-            $delivery = $client->chargeDeliveryChannel($whatsapp->isConfigured());
+            $delivery = $client->chargeDeliveryChannel($whatsapp->isConfiguredFor($client->user));
 
             // Registro persistente primeiro (com idempotência por período,
             // para retry do job ou re-disparo manual não duplicarem a cobrança);
@@ -58,7 +58,7 @@ class SendClientCharge implements ShouldQueue
             }
 
             if ($delivery?->sendsWhatsapp()) {
-                SendWhatsappMessage::dispatch($client->whatsappNumber(), config('services.whatsapp.template_charge'), [
+                SendWhatsappMessage::dispatch($client->user, $client->whatsappNumber(), $client->user->whatsappTemplate(), [
                     $client->name,
                     'R$ '.number_format($charge['total'], 2, ',', '.'),
                     $start->format('d/m/Y').' a '.$end->format('d/m/Y'),

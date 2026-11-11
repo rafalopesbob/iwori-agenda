@@ -33,7 +33,7 @@ class SendSessionCharge implements ShouldQueue
     {
         $session = $this->session;
         $client = $session->client;
-        $delivery = $client->chargeDeliveryChannel($whatsapp->isConfigured());
+        $delivery = $client->chargeDeliveryChannel($whatsapp->isConfiguredFor($client->user));
 
         // Re-disparo da mesma sessão reenvia a mensagem sem duplicar o registro.
         $record = app(BillingService::class)->recordSessionCharge($session, $delivery ?? $client->billing_channel);
@@ -52,7 +52,7 @@ class SendSessionCharge implements ShouldQueue
         }
 
         if ($delivery?->sendsWhatsapp()) {
-            SendWhatsappMessage::dispatch($client->whatsappNumber(), config('services.whatsapp.template_charge'), [
+            SendWhatsappMessage::dispatch($client->user, $client->whatsappNumber(), $client->user->whatsappTemplate(), [
                 $client->name,
                 'R$ '.number_format((float) $session->value, 2, ',', '.'),
                 $session->scheduled_at->format('d/m/Y \à\s H:i'),

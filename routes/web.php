@@ -16,6 +16,7 @@ use App\Http\Controllers\DemoLoginController;
 use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\WhatsAppConnectionController;
 use App\Http\Controllers\WhatsAppMessageController;
 use Illuminate\Support\Facades\Route;
 
@@ -81,6 +82,14 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])->name('profile.photo');
         Route::delete('/profile/photo', [ProfileController::class, 'destroyPhoto'])->name('profile.photo.destroy');
         Route::patch('/profile/reply-to', [ProfileController::class, 'updateReplyTo'])->name('profile.reply-to');
+    });
+
+    // WhatsApp do profissional: o envio automático sai do número que ele conectar.
+    Route::get('/whatsapp', [WhatsAppConnectionController::class, 'edit'])->name('whatsapp.edit');
+    Route::middleware(['not-demo', 'throttle:messages'])->group(function () {
+        Route::put('/whatsapp', [WhatsAppConnectionController::class, 'update'])->name('whatsapp.update');
+        Route::delete('/whatsapp', [WhatsAppConnectionController::class, 'destroy'])->name('whatsapp.destroy');
+        Route::post('/whatsapp/modelo', [WhatsAppConnectionController::class, 'template'])->name('whatsapp.template');
     });
 
     Route::resource('clients', ClientController::class);

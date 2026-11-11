@@ -23,7 +23,7 @@ class ProfileController extends Controller
         return view('profile.edit', [
             'user' => $request->user(),
             'googleConfigured' => $calendar->isConfigured(),
-            'whatsappAutomatic' => $whatsapp->isConfigured(),
+            'whatsappAutomatic' => $whatsapp->isConfiguredFor($request->user()),
         ]);
     }
 
