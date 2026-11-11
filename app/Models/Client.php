@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\BillingChannel;
 use App\Enums\PaymentCycle;
 use Carbon\CarbonImmutable;
+use Database\Factories\ClientFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,7 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[Fillable(['name', 'email', 'phone', 'session_value', 'notes', 'active', 'payment_cycle', 'payment_day', 'payment_interval_days', 'billing_channel'])]
 class Client extends Model
 {
-    /** @use HasFactory<\Database\Factories\ClientFactory> */
+    /** @use HasFactory<ClientFactory> */
     use HasFactory, SoftDeletes;
 
     /**
@@ -54,6 +55,14 @@ class Client extends Model
     public function sessions(): HasMany
     {
         return $this->hasMany(ClientSession::class);
+    }
+
+    /**
+     * Cobranças registradas do cliente (período e avulsas).
+     */
+    public function charges(): HasMany
+    {
+        return $this->hasMany(Charge::class);
     }
 
     /**

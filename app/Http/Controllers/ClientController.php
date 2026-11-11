@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Enums\BillingChannel;
+use App\Enums\SessionStatus;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientRequest;
 use App\Models\Client;
+use App\Services\ClientHistoryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -85,11 +87,36 @@ class ClientController extends Controller
     /**
      * Exibe os dados de um cliente.
      */
-    public function show(Client $client): View
+    public function show(Request $request, Client $client, ClientHistoryService $history): View
     {
         $this->authorize('view', $client);
 
-        return view('clients.show', compact('client'));
+        // Filtro da lista de sessões por situação.
+        $sessionStatus = SessionStatus::tryFrom((string) $request->query('situacao'));
+
+        // Duas listas paginadas na mesma página: cada uma com o seu parâmetro
+        // de página e voltando para a própria seção (âncora).
+        $sessions = $client->sessions()
+            ->when($sessionStatus, fn ($query) => $query->where('status', $sessionStatus->value))
+            ->orderByDesc('scheduled_at')
+            ->paginate(10, ['*'], 'sessoes')
+            ->withQueryString()
+            ->fragment('sessoes');
+
+        $charges = $client->charges()
+            ->latest('sent_at')
+            ->paginate(10, ['*'], 'cobrancas')
+            ->withQueryString()
+            ->fragment('cobrancas');
+
+        return view('clients.show', [
+            'client' => $client,
+            'summary' => $history->summary($client),
+            'months' => $history->monthly($client),
+            'sessions' => $sessions,
+            'sessionStatus' => $sessionStatus,
+            'charges' => $charges,
+        ]);
     }
 
     /**
